@@ -1,27 +1,63 @@
 import Vue from 'vue'
-import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import Router from 'vue-router'
 
-Vue.use(VueRouter)
+Vue.use(Router)
 
-const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+import Home from '@/views/Home'
+import Search from '@/views/Search'
+import Login from '@/views/Login'
+import Register from '@/views/Register'
+
+let originPush = Router.prototype.push;
+let originReplace = Router.prototype.replace;
+Router.prototype.push = function(location,resolve,reject){
+  if(resolve && reject){
+    //call和apply的区別在於call是一個一個傳參數用逗号隔开，apply是一個數組
+    originPush.call(this,location,resolve,reject);
+  }else{
+    originPush.call(this,location,() =>{},() =>{});
   }
-]
+}
 
-const router = new VueRouter({
-  routes
+Router.prototype.replace = function(location,resolve,reject){
+  if(resolve && reject){
+    originReplace.call(this,location,resolve,reject);
+  }else{
+    originReplace.call(this,location,() =>{},() =>{});
+  }
+}
+export default new Router({
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes: [
+    {
+      path:"/home",
+      component:Home,
+      name:'home'
+    },
+    {
+      path:'/search/:keyword',
+      component: Search,
+      name:'search',
+      props: route =>({
+        keyword: route.params.keyword,
+        category1Id: route.query.category1Id,
+        category2Id: route.query.category2Id,
+        category3Id: route.query.category3Id,
+        categoryName: route.query.categoryName
+      })
+    },
+    {
+      path:"/login",
+      component:Login
+    },
+    {
+      path:"/register",
+      component:Register
+    },
+    {
+      path:"/",
+      redirect:'/home'
+    }
+  ]
 })
-
-export default router
