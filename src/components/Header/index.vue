@@ -31,6 +31,7 @@
               id="autocomplete"
               class="input-error input-xxlarge"
               v-model="keyword"
+              placeholder="商品名、商品IDで検索"
             />
             <button
               class="sui-btn btn-xlarge btn-danger"
@@ -59,25 +60,20 @@ export default {
     };
   },
   methods: {
-    goSearch() {
-      if (this.keyword) {
-        const searchKeyword = {
-          name: this.keyword,
-          id: this.keyword,
-        };
-        this.addCategory(searchKeyword);
-      }
-
-      let location = {
+  ...mapActions('search', ['getSearchResult']),
+  goSearch() {
+    if (this.keyword) {
+      this.getSearchResult({
+        keyword: this.keyword
+      });
+      this.$router.push({
         name: "search",
-        params: { keyword: this.keyword || undefined },
-      };
-
-      location.query = this.$route.query;
-      this.$router.push(location);
-    },
-    ...mapActions('search', ['addCategory']),
+        params: { keyword: this.keyword }
+      });
+    }
   },
+},
+
 };
 </script>
 

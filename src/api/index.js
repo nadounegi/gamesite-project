@@ -7,11 +7,18 @@ import requests from './request.js';
 //    return requests({url:'/game/getCategoryList',method:'GET'});
 // }
 //获取导航栏分类列表 /game/getCategoryList シンプルな書き方
-export const reqCategoryList = () => requests({ url: '/api/game/getCategoryList', method: 'GET' });
-
+export function reqCategoryList(){
+    return requests.get('/game/getCategoryList');
+}
 //获取轮播图 /game/getSwiper
-export const reqGetBannerList = () => requests({ url: '/api/lunbo', method: 'GET' });
-
+export function reqGetBannerList(){
+    return requests.get('/lunbo');
+}
 //游戏商品搜索/获取游戏列表 請求方法:POST /api/gamelist 参数持ち data:params 空き対象を持つ
-export const reqGetSearchInfo = (params) => requests({ url: '/api/gamelist', method: 'POST', data: params });
-export const reqGameList = (params) => requests({url:'/api/gamelist',method:'POST',data:params});
+export function reqGetSearchInfo(params){
+    return requests.post('/gamelist',params);
+}
+
+export function reqGameList(params){
+    return requests.post('/gamelist',params);
+}

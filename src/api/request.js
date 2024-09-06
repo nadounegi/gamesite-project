@@ -9,7 +9,7 @@ import "nprogress/nprogress.css";
 // ベースURLの設定
 const requests = axios.create({
     //ベースURLの設定
-    baseURL:"",
+    baseURL:'http://127.0.0.1:4523/m1/4324118-3967167-default',
     //タイムアウトの設定
     timeout: 5000,
     headers: {

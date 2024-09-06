@@ -2,54 +2,56 @@
   <div class="type-nav">
     <div class="container">
       <!-- 事件委托 -->
-      <div @mouseleave="leaveShow" @mouseenter="entershow">
-        <h2 class="all">全部商品カテゴリー</h2>
-        <transition>
-          <div class="sort" v-if="isShow">
-            <div class="all-sort-list2" @click="goSearch">
-              <div v-if="firstLevelCateogries.length > 0">
+      <div @mouseleave="leaveHandler" @click="goSearch">
+        <h2 class="all" @mouseenter="changeShow">全部商品カテゴリー</h2>
+        <transition name="sort">
+          <div class="sort" v-show="show">
+            <div class="all-sort-list2">
+              <!-- 一級分類 -->
                 <div
                   class="item"
-                  v-for="(c1, index) in firstLevelCateogries"
-                  :key="c1.id"
-                  :class="{ cur: currentIndex == index }"
+                  v-for="(c1, index) in categoryList"
+                  :key="c1.categoryId"
                 >
-                  <h3 @mouseenter="changeIndex(index)">
-                    <a
-                      :data-categoryName="c1.name"
-                      :data-category1Id="c1.id"
-                    >
-                      {{ c1.name }}
+                  <h3 @mouseenter="enterHandler(index)"
+                  :class="{active:currentIndex == index}"
+                  >
+                    <a 
+                    :data-categoryName="c1.categoryName" 
+                    :data-category1Id="c1.categoryId">
+                      {{ c1.categoryName }}
                     </a>
                   </h3>
+                  <!-- 二級、三級分類 -->
                   <div
                     class="item-list clearfix"
-                    v-if="getChildren(c1.id).length > 0"
                     :style="{
                       display: currentIndex == index ? 'block' : 'none',
                     }"
                   >
+                  <!-- 二級分類 -->
                     <div
                       class="subitem"
-                      v-for="c2 in getChildren(c1.id)"
-                      :key="c2.id"
+                      v-for="(c2,index) in c1.categoryChild"
+                      :key="c2.categoryId"
                     >
                       <dl class="fore">
                         <dt>
                           <a
-                            :data-categoryName="c2.name"
-                            :data-category2Id="c2.id"
+                            :data-categoryName="c2.categoryName"
+                            :data-category2Id="c2.categoryId"
                           >
-                            {{ c2.name }}
+                            {{ c2.categoryName }}
                           </a>
                         </dt>
-                        <dd v-if="getChildren(c2.id).length > 0">
-                          <em v-for="c3 in getChildren(c2.id)" :key="c3.id">
+                        <dd>
+                          <em v-for="(c3,index) in c2.categoryChild" 
+                          :key="c3.categoryId">
                             <a
-                              :data-categoryName="c3.name"
-                              :data-category3Id ="c3.id"
+                            :data-categoryName="c3.categoryName"
+                            :data-category3Id="c3.categoryId"
                             >
-                              {{ c3.name }}
+                              {{ c3.categoryName }}
                             </a>
                           </em>
                         </dd>
@@ -59,7 +61,6 @@
                 </div>
               </div>
             </div>
-          </div>
         </transition>
       </div>
       <nav class="nav">
@@ -73,94 +74,68 @@
 
 
 <script>
-import debounce from "lodash/debounce";
-import { mapState, mapActions } from "vuex";
+import { mapState } from "vuex";
+import throttle from "/node_modules/lodash/throttle.js";
 export default {
   name: "TypeNav",
   data() {
     return {
       //マウスがどのカテゴリーに乗せるかを判断する
       currentIndex: -1,
-      isShow: true,
+      show: true,
     };
-  },
-  created() {
-    this.fetchCategoryList();
-  },
-  computed: {
-    ...mapState("home", ["categoryList"]),
-
-    firstLevelCateogries(){
-      return this.categoryList.filter(category => !category.parentId);
-    },
-    //防抖
-    debouncedChangeIndex() {
-      return debounce(this.changeIndex, 500);
-    },
-  },
+  }, 
   methods: {
-    ...mapActions("search", [
-      "addCategory",
-      "removeCategory",
-      "getSearchResult",
-    ]),
-    ...mapActions("home", ["fetchCategoryList"]),
-    //mouseenterイベントを使って,レスポンシブデータcurrentIndexを変更する
-    //マウスに乗せたカテゴリーの色を変えるため
-    changeIndex(index) {
-      //indexは、マウスに乗せたカテゴリーのインデックス
+    enterHandler:throttle(function(index){
       this.currentIndex = index;
-    },
-    entershow() {
-      this.isShow = true;
-    },
-    //mouseleaveイベントを使って、レスポンシブデータcurrentIndexを変更する
-    //マウスがカテゴリーから離れた時、カテゴリーの色を元に戻す
-    leaveShow() {
-      //searchコンポーネントの場合は、マウスがカテゴリーから離れた時、カテゴリーを隠す
-      if (this.$route.path !== "/home") {
-        this.isShow = false;
-      }
+    },50),
+    leaveHandler(){
       this.currentIndex = -1;
-    },
-    //カテゴリーをクリックすると、検索ページに飛ぶ
-    goSearch(event) {
-      let element = event.target;
-      let { categoryname, category1id, category2id, category3id } =
-        element.dataset;
-      let selectCategory = {
-        name: categoryname,
-        id: category1id || category2id || category3id,
-      };
-
-      this.addCategory(selectCategory);
-
-      if (categoryname) {
-        let location = {
-          name: "search",
-          params: { keyword: categoryname },
-          query: {},
-        };
-        if (category1id) {
-          location.query.category1Id = category1id;
-        } else if (category2id) {
-          location.query.category2Id = category2id;
-        } else {
-          location.query.category3Id = category3id;
-        }
-
-        location.query.categoryName = categoryname;
-        this.$router.push(location);
+      if(this.$route.path != "/home"){//ホームページ以外のページに行くと、カテゴリーが消える  
+        this.show = false;
       }
     },
-    //マウスがカテゴリーに乗せると、カテゴリーの詳細を表示する
-    entershow() {
-      this.isShow = true;
+    changeShow(){
+      if(this.$route.path != "/home"){
+        this.show = true;
+      }
     },
-    getChildren(parentId){
-      return this.categoryList.filter(category =>category.parentId ===parentId);
+    goSearch(event){
+      let target = event.target;
+      let { categoryname,category1id,category2id,category3id } = target.dataset;
+
+      if(categoryname){//クリックされたaタグにカテゴリー名を判断
+        var locations = {
+          name: "search",
+          query:{categoryName:categoryname}
+        };
+      if(category1id){//一級分類的a
+        locations.query.category1Id = category1id;
+      }else if(category2id){//二級分類的a
+        locations.query.category2Id = category2id;
+      }else{//三級分類的a
+        locations.query.category3Id = category3id;
+      }
+      if(this.$route.params.keyword){//点撃分類a的時候，將搜索關鍵字をsearch組件に渡す
+        locations.params = this.$route.params;
+      }
+      this.$router.push(locations);
+      }
     }
   },
+  mounted(){
+    if(this.$route.path != "/home"){
+      this.show = false;
+    }
+  },
+  created(){//这个一定要添，否则不出数据
+    this.$store.dispatch("home/fetchCategoryList");
+  },
+  computed:{
+    ...mapState({
+      categoryList:(state) => state.home.categoryList
+    })
+  }
 };
 </script>
 

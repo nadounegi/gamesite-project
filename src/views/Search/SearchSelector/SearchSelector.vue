@@ -4,7 +4,7 @@
         <div class="fl key brand">ブランド</div>
         <div class="value logos">
           <ul class="logo-list">
-            <li v-for="brand in uniqueBrands" :key="brand">{{brand}}</li>
+            <li v-for="brand in brandmarkList" :key="brand.brand_id">{{brand.brand_name}}</li>
           </ul>
         </div>
         <div class="ext">
@@ -12,67 +12,45 @@
           <a href="javascript:void(0);">更多</a>
         </div>
       </div>
-      <div class="type-wrap">
-        <div class="fl key">機種</div>
+      <div class="type-wrap" v-for="attr in attrsList" :key="attr.attribute_id">
+        <div class="fl key">{{attr.attr_name}}</div>
         <div class="fl value">
           <ul class="type-list">
-            <li v-for="platform in uniquePlatforms" :key="platform">
+            <li v-for="platform in getGamePlatforms" :key="platform">
               <a>{{platform}}</a>
             </li>
           </ul>
         </div>
         <div class="fl ext"></div>
       </div>
-      <div class="type-wrap">
-        <div class="fl key">ジャンル</div>
-        <div class="fl value">
-          <ul class="type-list">
-            <li v-for="genre in uniqueGenres" :key="genre">
-              <a>{{ genre }}</a>
-            </li>
-          </ul>
-        </div>
-        <div class="fl ext"></div>
-      </div>
-     
-      <div class="type-wrap">
-        <div class="fl key">价格</div>
-        <div class="fl value">
-          <ul class="type-list">
-            <li v-for="priceRange in uniquePriceRanges" :key="priceRange">
-              <a>{{priceRange}}</a>
-            </li>
-          </ul>
-        </div>
-        <div class="fl ext">
-        </div>
-      </div>
  
     </div>
   </template>
   
   <script>
-  import { mapGetters } from 'vuex';
+  import { mapGetters,mapActions } from 'vuex';
 
 export default {
-  name: 'SearchSelector',
-  computed: {
-    ...mapGetters('search', ['goodsList']),
-    uniqueBrands() {
-      return [...new Set(this.goodsList.map(item => item.attributes_summary.match(/ブランド:([^,]+)/)?.[1]))];
-    },
-    uniquePlatforms() {
-      return [...new Set(this.goodsList.map(item => item.attributes_summary.match(/機種:([^,]+)/)?.[1]))];
-    },
-    uniqueGenres() {
-      return [...new Set(this.goodsList.map(item => item.attributes_summary.match(/ジャンル:([^,]+)/)?.[1]))];
-    },
-    uniquePriceRanges() {
-      const prices = this.goodsList.map(item => item.price);
-      return this.calculatePriceRanges(prices);
+  data(){
+    return{
+      subCategories: [],
+      categoryList:[]
     }
   },
+  name: 'SearchSelector',
+  computed: {
+    ...mapGetters("search",["brandmarkList"])
+  },
   methods: {
+    ...mapActions("search",["addCategory","removeCategory","clearCategories","getSearchResult"]),
+
+    getUniqueValues(filed){
+      if(!this.subCategories || this.subCategories.length === 0){
+        return [];
+      }
+      const values = this.subCategories.map(category => category[filed]);
+      return [...new Set(values)];
+    },
     calculatePriceRanges(prices) {
       const ranges = [
         { label: "0-1000円", min: 0, max: 1000 },
@@ -90,6 +68,25 @@ export default {
       });
 
       return Array.from(uniqueRanges);
+    },
+    loadSubCategories(category1Id){
+      this.subCategories = this.getChildren(category1Id);
+      this.getGamePlatforms = this.getUniqueValues('platform');
+      this.getGameGenre = this.getUniqueValues('genre');
+      this.brandmarkList = this.getUniqueValues('brand');
+    },
+    getChildren(parentId){
+      return this.categoryList.filter(
+        (category) => category.parentId === parentId
+      );
+    },
+   
+  },
+  mounted(){
+    this.getSearchResult();
+    const {category1Id} = this.$route.query;
+    if(category1Id){
+      this.loadSubCategories(category1Id);
     }
   }
 };
@@ -139,8 +136,8 @@ export default {
             li {
               float: left;
               border: 1px solid #e4e4e4;
-              margin: -1px -1px 0 0;
-              width: 105px;
+              margin: -1px -1px 0 8px;              
+              width: 135px;
               height: 52px;
               text-align: center;
               line-height: 52px;

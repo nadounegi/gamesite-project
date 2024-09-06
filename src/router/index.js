@@ -10,6 +10,7 @@ import Register from '@/views/Register'
 
 let originPush = Router.prototype.push;
 let originReplace = Router.prototype.replace;
+
 Router.prototype.push = function(location,resolve,reject){
   if(resolve && reject){
     //call和apply的区別在於call是一個一個傳參數用逗号隔开，apply是一個數組
@@ -33,19 +34,14 @@ export default new Router({
     {
       path:"/home",
       component:Home,
-      name:'home'
+      name:'home',
+      meta:{show:true}
     },
     {
-      path:'/search/:keyword',
+      path:'/search/:keyword?',
       component: Search,
       name:'search',
-      props: route =>({
-        keyword: route.params.keyword,
-        category1Id: route.query.category1Id,
-        category2Id: route.query.category2Id,
-        category3Id: route.query.category3Id,
-        categoryName: route.query.categoryName
-      })
+      meta:{show:true}
     },
     {
       path:"/login",

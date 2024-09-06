@@ -1,17 +1,21 @@
-import { reqGetSearchInfo } from "@/api";
-
+import { reqGetSearchInfo,reqCategoryList } from "@/api";
 const state = {
     selectedCategories: [], //選択されたカテゴリ
-    brandmarkList: [],//ブランドリスト
+    brandmarkList: [], //ブランドリスト
+    categoryList: [], //カテゴリリスト
     attrsList: [], //属性リスト
     goodsList: [], //商品リスト
+    searchResults: [], //検索結果
     total: 0, //商品の総数
     pageSize: 10, //ページごとに表示する商品数
     pageNo: 1, //現在のページ番号
     totalPages: 0 //総ページ数
 };
 const mutations = {
-    setSearchList(state,payload){
+    setCategoryList(state,categories){
+        state.categoryList = categories;
+    },
+    setSearchList(state, payload) {
         state.brandmarkList = payload.brandmarkList;
         state.attrsList = payload.attrsList;
         state.goodsList = payload.goodsList || [];
@@ -20,76 +24,89 @@ const mutations = {
         state.pageNo = payload.pageNo;
         state.totalPages = payload.totalPages;
     },
-    setPageNo(state,pageNo){
+    setPageNo(state, pageNo) {
         state.pageNo = pageNo;
     },
-    setSelectedCategory(state,payload){
+    setSelectedCategory(state, payload) {
+        console.log("Before Mutation:", state.selectedCategories);
         state.selectedCategories.push(payload);
-    },
-    removeSelectedCategory(state,categoryId){
+        console.log("After Mutation:", state.selectedCategories);
+    }
+    ,
+    removeSelectedCategory(state, categoryId) {
         state.selectedCategories = state.selectedCategories.filter(
             category => category.id !== categoryId
         );
     },
-    clearSelectedCategories(state){
+    clearSelectedCategories(state) {//選択されたカテゴリをクリアする
         state.selectedCategories = [];
     },
-    clearSearchResults(state){
-        state.brandmarkList= [];
+    clearSearchResults(state) {
+        state.brandmarkList = [];
         state.attrsList = [];
         state.goodsList = [];
     }
 };
 const actions = {
-    addCategory({commit,dispatch},category){
-        commit('setSelectedCategory',category);
-        //検索結果を取得
-        dispatch('getSearchResult',{keyword:category.name});
+    async fetchCategoryList({ commit}) {
+        try {
+            const response = await reqCategoryList();
+            commit('setCategoryList', response.data);
+        }catch(error){
+            console.error('Error fetching category list:', error);
+        }
     },
-    removeCategory({commit,dispatch,state},categoryId){
-        commit('removeSelectedCategory',categoryId);
-        if(state.selectedCategories.length === 0){//選択されたカテゴリがない場合、検索結果をクリアする
+    addCategory({ commit, dispatch }, category) {
+        console.log("Adding Category:", category);  // 检查这里
+        commit('setSelectedCategory', category);
+        dispatch('getSearchResult', { keyword: category.name });
+    },
+    
+    removeCategory({ commit, dispatch, state }, categoryId) {
+        commit('removeSelectedCategory', categoryId);
+        if (state.selectedCategories.length === 0) {
             commit('clearSearchResults');
-        }else{
-            const lastCategory = state.selectedCategories[state.selectedCategories.length - 1];//最後に選択されたカテゴリを取得
-            dispatch('getSearchResult',{keyword:lastCategory.name});
+        } else {//最後に選択されたカテゴリの商品を表示する
+            const lastCategory = state.selectedCategories[state.selectedCategories.length - 1];
+            dispatch('getSearchResult', { keyword: lastCategory.name });
         }
     },
-    clearCategories({commit}){
+    clearCategories({ commit }) {
         commit('clearSelectedCategories');
-        commit('cleaerSearchResults');
+        commit('clearSearchResults');
     },
-   async getSearchResult({commit,state},params={}){
-    try{
-        const searchParams = {
-            ...params,
-            categories: state.selectedCategories.map(category => category.name).join(','),
-        };
-
-        const result = await reqGetSearchInfo(searchParams);
-        if(result.code === 200){
-            commit('setSearchList',result.data);
-        }else{
-            console.error(result.message);
+    async getSearchResult({ commit, state }, params = {}) {
+        try {
+            const searchParams = {
+                ...params,
+                categories: state.selectedCategories.map(category => category.name).join(','),
+            };
+            const result = await reqGetSearchInfo(searchParams);
+            if (result.code === 200) {
+                commit('setSearchList', result.data);
+            } else {
+                console.error(result.message);
+            }
+        } catch (error) {
+            console.error("Request failed", error);
         }
-    }catch(error){
-        console.error('請求失敗:',error);
+    },
+    setPageNo({ commit, dispatch }, pageNo) {
+        commit('setPageNo', pageNo);
+        dispatch('fetchSearchResults');
     }
-   },
-   setPageNo({commit},pageNo){
-        commit('setPageNo',pageNo);
-   }
 };
 //計算属性　プロジェクトにおいて、リストを簡潔に表示するために使用される
 const getters = {
-    selectedCategories: state => state.selectedCategories,
+    categoryList: state => state.categoryList,
+    selectedCategories: (state) => state.selectedCategories,
     brandmarkList: state => state.brandmarkList,
     attrsList: state => state.attrsList,
     goodsList: state => state.goodsList,
-    total: state => state.total,
-    pageSize: state => state.pageSize,
-    pageNo: state => state.pageNo,
-    totalPages: state => state.totalPages
+    total: (state) => state.total,
+    pageSize: (state) => state.pageSize,
+    pageNo: (state) => state.pageNo,
+    totalPages: (state) => state.totalPages
 };
 
 export default {
