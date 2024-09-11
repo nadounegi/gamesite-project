@@ -8,59 +8,62 @@
           <div class="sort" v-show="show">
             <div class="all-sort-list2">
               <!-- 一級分類 -->
-                <div
-                  class="item"
-                  v-for="(c1, index) in categoryList"
-                  :key="c1.categoryId"
+              <div
+                class="item"
+                v-for="(c1, index) in categoryList"
+                :key="c1.categoryId"
+              >
+                <h3
+                  @mouseenter="enterHandler(index)"
+                  :class="{ active: currentIndex == index }"
                 >
-                  <h3 @mouseenter="enterHandler(index)"
-                  :class="{active:currentIndex == index}"
+                  <a
+                    :data-categoryName="c1.categoryName"
+                    :data-category1Id="c1.categoryId"
                   >
-                    <a 
-                    :data-categoryName="c1.categoryName" 
-                    :data-category1Id="c1.categoryId">
-                      {{ c1.categoryName }}
-                    </a>
-                  </h3>
-                  <!-- 二級、三級分類 -->
-                  <div
-                    class="item-list clearfix"
-                    :style="{
-                      display: currentIndex == index ? 'block' : 'none',
-                    }"
-                  >
+                    {{ c1.categoryName }}
+                  </a>
+                </h3>
+                <div
+                  class="item-list clearfix"
+                  :style="{
+                    display: currentIndex == index ? 'block' : 'none',
+                  }"
+                >
                   <!-- 二級分類 -->
-                    <div
-                      class="subitem"
-                      v-for="(c2,index) in c1.categoryChild"
-                      :key="c2.categoryId"
-                    >
-                      <dl class="fore">
-                        <dt>
+                  <div
+                    class="subitem"
+                    v-for="(c2, index) in c1.categoryChild"
+                    :key="c2.categoryId"
+                  >
+                    <dl class="fore">
+                      <dt>
+                        <a
+                          :data-categoryName="c2.categoryName"
+                          :data-category2Id="c2.categoryId"
+                        >
+                          {{ c2.categoryName }}
+                        </a>
+                      </dt>
+                      <dd>
+                        <em
+                          v-for="(c3, index) in c2.categoryChild"
+                          :key="c3.categoryId"
+                        >
                           <a
-                            :data-categoryName="c2.categoryName"
-                            :data-category2Id="c2.categoryId"
-                          >
-                            {{ c2.categoryName }}
-                          </a>
-                        </dt>
-                        <dd>
-                          <em v-for="(c3,index) in c2.categoryChild" 
-                          :key="c3.categoryId">
-                            <a
                             :data-categoryName="c3.categoryName"
                             :data-category3Id="c3.categoryId"
-                            >
-                              {{ c3.categoryName }}
-                            </a>
-                          </em>
-                        </dd>
-                      </dl>
-                    </div>
+                          >
+                            {{ c3.categoryName }}
+                          </a>
+                        </em>
+                      </dd>
+                    </dl>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
         </transition>
       </div>
       <nav class="nav">
@@ -84,58 +87,56 @@ export default {
       currentIndex: -1,
       show: true,
     };
-  }, 
+  },
+
   methods: {
-    enterHandler:throttle(function(index){
+    enterHandler: throttle(function (index) {
       this.currentIndex = index;
-    },50),
-    leaveHandler(){
+    }, 20),
+    leaveHandler() {
       this.currentIndex = -1;
-      if(this.$route.path != "/home"){//ホームページ以外のページに行くと、カテゴリーが消える  
+      if (this.$route.path != "/home") {
+        //ホームページ以外のページに行くと、カテゴリーが消える
         this.show = false;
       }
     },
-    changeShow(){
-      if(this.$route.path != "/home"){
+    changeShow() {
+      if (this.$route.path != "/home") {
         this.show = true;
       }
     },
-    goSearch(event){
-      let target = event.target;
-      let { categoryname,category1id,category2id,category3id } = target.dataset;
+    goSearch(event) {
+      let { categoryname, category1id, category2id, category3id } =
+        event.target.dataset;
+      let query = {};
+      if (category3id) query.category3id = category3id; // 优先传递三级分类
+      else if (category2id)
+        query.category2id = category2id; // 如果没有三级分类，传递二级分类
+      else if (category1id) query.category1id = category1id; // 如果没有二级分类，传递一级分类
 
-      if(categoryname){//クリックされたaタグにカテゴリー名を判断
-        var locations = {
-          name: "search",
-          query:{categoryName:categoryname}
-        };
-      if(category1id){//一級分類的a
-        locations.query.category1Id = category1id;
-      }else if(category2id){//二級分類的a
-        locations.query.category2Id = category2id;
-      }else{//三級分類的a
-        locations.query.category3Id = category3id;
-      }
-      if(this.$route.params.keyword){//点撃分類a的時候，將搜索關鍵字をsearch組件に渡す
-        locations.params = this.$route.params;
-      }
-      this.$router.push(locations);
-      }
-    }
+      if (categoryname) query.categoryName = categoryname; // 分类名称
+
+      this.$router.push({
+        name: "search",
+        query,
+        params: this.$route.params,
+      });
+    },
   },
-  mounted(){
-    if(this.$route.path != "/home"){
+  mounted() {
+    if (this.$route.path != "/home") {
       this.show = false;
     }
   },
-  created(){//这个一定要添，否则不出数据
+  created() {
+    //这个一定要添，否则不出数据
     this.$store.dispatch("home/fetchCategoryList");
   },
-  computed:{
+  computed: {
     ...mapState({
-      categoryList:(state) => state.home.categoryList
-    })
-  }
+      categoryList: (state) => state.home.categoryList,
+    }),
+  },
 };
 </script>
 

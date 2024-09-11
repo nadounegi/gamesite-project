@@ -10,43 +10,66 @@
               <a href="#">全部结果</a>
             </li>
           </ul>
+          <!-- 選べれだカテゴリー、キーワード、ブランドおよび属性タグ-->
           <ul class="fl sui-tag">
+            <!-- カテゴリータグ -->
+            <li class="with-x" v-if="this.searchParams.categoryName">
+              {{ this.searchParams.categoryName }}
+              <i @click="removeCategory">×</i>
+            </li>
+            <!-- キーワードタグ -->
+            <li class="with-x" v-if="this.searchParams.keyword">
+              {{ this.searchParams.keyword }}<i @click="removeKeyword">×</i>
+            </li>
+            <!-- ブランドタグ -->
+            <li class="with-x" v-if="this.searchParams.brandmark">
+              {{ this.searchParams.brandmark }}
+              <i @click="removeBrandMark">×</i>
+            </li>
+            <!-- 属性タグ -->
             <li
-              v-for="category in selectedCategories"
-              :key="category.id"
               class="with-x"
+              v-for="(value, index) in searchParams.props"
+              :key="value"
             >
-              {{ category.name }}
-              <i>×</i>
+              {{ value }}
+              <i @click="removeProps(index)">×</i>
             </li>
           </ul>
         </div>
 
-        <!--selector-->
-        <SearchSelector />
+        <!--商品筛选组件-->
+        <SearchSelector
+          :setBrandmark="setBrandmark"
+          :setSearchProps="setSearchProps"
+        ></SearchSelector>
 
-        <!--details-->
+        <!-- 商品展示区 -->
         <div class="details clearfix">
+          <!-- 排序栏 -->
           <div class="sui-navbar">
             <div class="navbar-inner filter">
               <ul class="sui-nav">
-                <li class="active">
-                  <a href="#">综合</a>
+                <!-- 综合排序 -->
+                <li :class="{ active: orderInfo[0] === '1' }">
+                  <a href="javascript:;" @click="orderProduct('1')">
+                    综合
+                    <i
+                      v-show="orderInfo[0] === '1'"
+                      class="iconfont"
+                      :class="orderInfo[1] === 'desc' ? 'icon-down' : 'icon-up'"
+                    ></i>
+                  </a>
                 </li>
-                <li>
-                  <a href="#">销量</a>
-                </li>
-                <li>
-                  <a href="#">新品</a>
-                </li>
-                <li>
-                  <a href="#">评价</a>
-                </li>
-                <li>
-                  <a href="#">价格⬆</a>
-                </li>
-                <li>
-                  <a href="#">价格⬇</a>
+                <li :class="{ active: orderInfo[0] === '2' }">
+                  <a href="javascript:;" @click="orderProduct('2')">
+                    价格
+                    <i
+                      v-show="orderInfo[0] === '2'"
+                      class="iconfont"
+                      :class="orderInfo[1] === 'desc' ? 'icon-down' : 'icon-up'"
+                    ></i>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -56,31 +79,30 @@
             <ul class="yui3-g">
               <li
                 class="yui3-u-1-5"
-                v-for="item in filteredGoodsList"
-                :key="item.game_name"
+                v-for="good in goodsList"
+                :key="good.game_id"
+                :data-id="good.game_id"
               >
                 <div class="list-wrap">
                   <div class="p-img">
                     <a href="#" target="_blank"
-                      ><img :src="item.image_url" width="210px" height="80px"
+                      ><img :src="good.img_url" width="210px" height="80px"
                     /></a>
                   </div>
                   <div class="price">
                     <strong>
                       <em>¥</em>
-                      <i>{{ item.price }}</i>
+                      <i>{{ good.price }}</i>
                     </strong>
                   </div>
                   <div class="attr">
-                    <em>{{ item.game_name }}</em>
-                    <p @click="goSearch">
-                      {{ getGameBrand(item.attributes_summary) }}
-                    </p>
-                    <p>{{ getGameType(item.attributes_summary) }}</p>
+                    <em>{{ good.game_name }}</em>
+                    <p>{{ getGameBrand(good.attributes_summary) }}</p>
+                    <p>{{ getGameType(good.attributes_summary) }}</p>
                   </div>
                   <div class="commit">
                     <i class="command"
-                      >残り在庫数<span>{{ item.stock }}</span
+                      >残り在庫数<span>{{ good.stock }}</span
                       >件</i
                     >
                   </div>
@@ -136,177 +158,171 @@
   
   <script>
 import SearchSelector from "./SearchSelector/SearchSelector.vue";
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapState } from "vuex";
 
 export default {
   name: "search",
+  data() {
+    return {
+      //サーバーに渡すパラメータ
+      searchParams: {
+        category1Id: "", //一级分类的id
+        category2Id: "", //二级分类的id
+        category3Id: "", //三级分类的id
+        categoryName: "", //商品的名字
+        keyword: "", //用户搜索的关键字
+        props: [], //商品属性的搜索条件
+        brandmark: "", //品牌的搜索条件
+        order: "1:desc", //排序的参数 【默认初始值:1:desc】
+        minPrice: 0, //最小价格
+        maxPrice: Number.MAX_VALUE, //最大价格
+        pageNo: 1, //当前分页器的页码  【默认初始值:1】
+        pageSize: 10, //代表当前一页显示几条数据 【默认初始值:10】
+      },
+    };
+  },
   components: {
     SearchSelector,
   },
-  computed: {
-    ...mapGetters("search", [
-      "selectedCategories",
-      "goodsList",
-      "attrsList",
-      "categoryList",
-    ]),
-    filteredGoodsList() {
-      console.log("Selected Categories:", this.selectedCategories);
-      if (this.selectedCategories.length === 0) {
-        return this.goodsList;
-      }
-      return this.goodsList.filter((item) => {
-        return this.selectedCategories.every((category) => {//every() 方法用于检测数组所有元素是否都符合指定条件
-          return item.attributes_summary.includes(category.name);//includes() 方法用于判断一个字符串是否包含在另一个字符串中
-        });
-      });
-    },
+  beforeMount() {
+    // this.searchParams.category1Id = this.$route.query.category1Id;
+    // this.searchParams.category2Id = this.$route.query.category2Id;
+    // this.searchParams.category3Id = this.$route.query.category3Id;
+    // this.searchParams.categoryName = this.$route.query.categoryName;
+    // this.searchParams.keyword = this.$route.params.keyword;
+    //Object.assign ES6の機能で、オブジェクトのコピーを作成する
+    Object.assign(this.searchParams, this.$route.params, this.$route.query);
+    // if (this.$route.params.keyword) {
+    //   this.searchParams.keyword = this.$route.params.keyword;
+    // }
+    // if (this.$route.query.categoryName) {
+    //   this.searchParams.categoryName = this.$route.query.categoryName;
+    // }
   },
-  watch: {
-    "$route.query": "processRouteParams",
+  mounted() {
+    this.getData();
   },
   methods: {
-    ...mapActions("search", [
-      "getSearchResult",
-      "removeCategory",
-      "fetchCategoryList",
-      "clearCategories",
-      "addCategory",
-    ]),
-
-    async goSearch() {
-      if (this.keyword) {
-        await this.getSearchResult({
-          category1Id: this.query.category1Id,
-          keyword: this.keyword,
+    //サーバーにリクエストしてsearchモジュールデータを取得（パラメータにより異なるデータを表示）
+    //リクエストをメソッドにして、必要な場合に呼び出す
+    getData() {
+      this.$store
+        .dispatch("search/getSearchResult", this.searchParams)
+        .then(() => {
+          console.log("获取到的商品数据:", this.goodsList); // 打印商品列表，确认后端返回的数据是否正确
+          console.log(this.searchParams);
         });
-        this.$router.push({
-          name: "search",
-          params: { keyword: this.keyword },
-          query: { category1Id: this.$route.query.category1Id },
-        });
+    },
+    applyPriceFilter({ minPrice, maxPrice }) {
+      this.searchParams.minPrice = minPrice;
+      this.searchParams.maxPrice = maxPrice;
+      this.getData();
+    },
+    removeCategory() {
+      this.searchParams.category1Id = "";
+      this.searchParams.category2Id = "";
+      this.searchParams.category3Id = "";
+      this.$router.replace({
+        name: "search",
+        params: this.$route.params,
+      });
+      this.getData(); // 更新商品列表
+    },
+    removeKeyword() {
+      this.searchParams.keyword = "";
+      this.$router.replace({
+        name: "search",
+        query: this.$route.query,
+      });
+      this.$bus.$emit("clearKeyword");
+    },
+    orderProduct(orderType) {
+      let [orderField, type] = this.orderInfo;
+      if (orderField === orderType) {
+        type = type === "desc" ? "asc" : "desc";
+      } else {
+        type = "desc";
+      }
+      this.searchParams.order = orderType + ":" + type;
+      this.getData();
+    },
+    getBrandMark(brand_id, brand_name) {
+      console.log("父组件", brand_id, brand_name);
+      this.searchParams.brandmark = `${brand_id}:${brand_name}`;
+      this.getData();
+    },
+    setSearchProps(value) {
+      if (!this.searchParams.props.includes(value)) {
+        this.searchParams.props.push(value);
+        this.getData();
       }
     },
-    async processRouteParams() {
-      const { category1Id, category2Id, category3Id } = this.$route.query;
-      console.log(("Route params:", { category1Id, category2Id, category3Id }));
-      try {
-        if (!this.categoryList || this.categoryList.length === 0) {
-          console.warn("Category list not loaded");
-          await this.fetchCategoryList();
-        }
-
-        if (category1Id && !category2Id && !category3Id) {
-          this.updateCategoriesForLevel1(category1Id);
-        } else if (category2Id && !category3Id) {
-          this.updateCategoriesForLevel2(category2Id);
-        } else if (category3Id) {
-          this.updateCategoriesForLevel3(category3Id);
-        }
-      } catch (error) {
-        console.error("Failed to process route params", error);
+    removeBrandMark() {
+      this.$delete(this.searchParams, "brandmark");
+      this.getData();
+    },
+    setBrandmark(brandmark) {
+      if ((this.searchParams, "brandmark", brandmark));
+      this.getData();
+    },
+    getAttrAndAttrValue(attribute_id, attr_name, attrValue) {
+      let newProps = `${attribute_id}:${attrValue}:${attr_name}`;
+      if (this.searchParams.props.indexOf(newProps) == -1) {
+        this.getData();
       }
+      console.log(newProps);
     },
-    updateCategoriesForLevel1(category1Id) {
-      // 使用 category1Id 查找该一级分类下的所有二级分类
-      const secondLevelCategories = this.categoryList.filter(
-        (category) => category.parentId === category1Id
-      );
-
-      //清空当前的选择
-      this.clearCategories();
-
-      //将查到的二级分类添加到 selectedCategories 中
-      secondLevelCategories.forEach((category) => {
-        this.addCategory({
-          name: category.name,
-          id: category.id,
-          level: 2,
-        });
-      });
-      //获取二级分类下的三级分类
-      secondLevelCategories.forEach((category2) => {
-        const thirdLevelCategories = this.categoryList.filter(
-          (category) => category.parentId === category2.id
-        );
-        thirdLevelCategories.forEach((category3) => {
-          this.addCategory({
-            name: category3.name,
-            id: category3.id,
-            level: 3,
-          });
-        });
-      });
-      this.getSearchResult();
+    removeProps(index) {
+      this.searchParams.props.splice(index, 1);
+      this.getData();
     },
 
-    updateCategoriesForLevel2(category2Id) {
-      const thirdLevelCategories = this.categoryList.filter(
-        (category) => category.parentId === category2Id
-      );
-      this.clearCategories();
-
-      thirdLevelCategories.forEach((category) => {
-        this.addCategory({
-          name: category.name,
-          id: category.id,
-          level: 3,
-        });
-      });
-      this.getSearchResult();
-    },
-    async updateCategoriesForLevel3(category3Id) {
-      console.log("Category list:", this.categoryList);
-      console.log("Searching for category with ID:", category3Id);
-
-      const selectedCategory = this.categoryList.find(
-        (category) => category.id === parseInt(category3Id)
-      );
-
-      if (!selectedCategory) {
-        console.error("Category not found", category3Id);
-        return;
+    sort(flag) {
+      let originFlag = this.searchParams.order.split(":")[0];
+      let originSortType = this.searchParams.order.split(":")[1];
+      let newOrder = "";
+      if (flag == originFlag) {
+        newOrder = `${originFlag}:${originSortType} == "desc" ? "asc" : "desc"`;
+      } else {
+        newOrder = `${flag}:desc`;
       }
-
-      console.log("Selected Category:", selectedCategory);
-
-      this.clearCategories();
-
-      // 显式传递name属性
-      this.addCategory({
-        name: selectedCategory.name,
-        id: selectedCategory.id,
-        level: 3,
-      });
-
-      // 获取并显示该三级分类所属的二级分类
-      const parentCategory2 = this.categoryList.find(
-        (category) => category.id === selectedCategory.parentId
-      );
-
-      if (parentCategory2) {
-        this.addCategory({
-          name: parentCategory2.name,
-          id: parentCategory2.id,
-          level: 2,
-        });
-
-        // 获取并显示该二级分类所属的一级分类
-        const parentCategory1 = this.categoryList.find(
-          (category) => category.id === parentCategory2.parentId
-        );
-
-        if (parentCategory1) {
-          this.addCategory({
-            name: parentCategory1.name,
-            id: parentCategory1.id,
-            level: 1,
-          });
-        }
-      }
-      this.getSearchResult();
+      this.searchParams.order = newOrder;
+      this.getData();
     },
+    // handleFilterGames() {
+    //   const { category1Id,category2Id,category3Id,brandmark,priceRange } = this.searchParams;
 
+    //   this.filteredGoodsList = this.goodsList.filter((item) =>{
+    //     let matchesCategory1 = true;
+    //     let matchesCategory2 = true;
+    //     let matchesCategory3 = true;
+    //     let matchesBrand = true;
+    //     let matchesPrice = true;
+
+    //     // 匹配一级分类
+    //     if(category1Id){
+    //       matchesCategory1 = item.category1_id === category1Id;
+    //     }
+    //     // 匹配二级分类
+    //     if(category2Id){
+    //       matchesCategory2 = item.category2Id === category2Id;
+    //     }
+    //     // 匹配三级分类
+    //     if(category3Id){
+    //       matchesCategory3 = item.category3Id === category3Id;
+    //     }
+    //     // 匹配品牌
+    //     if(brandmark){
+    //       matchesBrand = item.brandmark === brandmark;
+    //     }
+    //     // 匹配价格区间
+    //     if(priceRange){
+    //       matchesPrice = item.price >= priceRange.min && item.price <= priceRange.max;
+    //     }
+    //     return matchesCategory1 && matchesCategory2 && matchesCategory3 && matchesBrand && matchesPrice;
+    //   });
+    //   console.log("筛选后的商品列表:", this.filteredGoodsList);
+    // },
     getGameType(attributes_summary) {
       const match = attributes_summary.match(/ジャンル:([^,]+)/);
       return match ? match[1] : "ジャンル情報なし";
@@ -315,27 +331,32 @@ export default {
       const match = attributes_summary.match(/ブランド:([^,]+)/);
       return match ? match[1] : "ブランド情報なし";
     },
-    async handleAddCategory(category) {
-      this.addCategory(category);
-
-      const keyword = this.selectedCategories.map((c) => c.name).join("");
-      console.log("search keyword", keyword);
-
-      await this.getSearchResult({
-        keyword: keyword,
-      });
+  },
+  computed: {
+    ...mapGetters("search", ["goodsList", "brandmarkList", "attrsList"]),
+    // displayGoodsList() {
+    //   if (this.filteredGoodsList && this.filteredGoodsList.length > 0) {
+    //     return this.filteredGoodsList;
+    //   }
+    //   if (this.goodsList && this.goodsList.length > 0) {
+    //     return this.goodsList;
+    //   }
+    //   return [];
+    // },
+    orderInfo() {
+      return this.searchParams.order.split(":");
     },
   },
-  mounted() {
-    // 如果 `categoryList` 是异步加载的，请确保它加载完后再调用 `processRouteParams`
-    this.fetchCategoryList().then(() => {
-      if (!this.categoryList || this.categoryList.length === 0) {
-        console.error("Category list not loaded");
-      } else {
-        this.processRouteParams();
-      }
-    });
-    this.getSearchResult({});
+
+  watch: {
+    $route(newRoute) {
+      this.searchParams.category1Id = undefined;
+      this.searchParams.category2Id = undefined;
+      this.searchParams.category3Id = undefined;
+      Object.assign(this.searchParams, newRoute.query, newRoute.params);
+      this.getData();
+      //每一次请求完毕，应该把1，2，3级分类的id清空，让它接收下一次相应的1，2，3级分类的id
+    },
   },
 };
 </script>
@@ -507,6 +528,7 @@ export default {
               .attr {
                 padding-left: 15px;
                 width: 85%;
+                height: 74px;
                 overflow: hidden;
                 margin-bottom: 8px;
                 min-height: 38px;

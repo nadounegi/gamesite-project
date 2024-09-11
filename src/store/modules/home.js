@@ -12,7 +12,6 @@ const state = {
 
 let mutations = {
   getCategoryList(state, categoryList) {
-    console.log('分类列表:', categoryList);
     state.categoryList = categoryList 
   },
 
@@ -28,7 +27,6 @@ let actions = {
   async fetchCategoryList({ commit }) {
     try{
       let result = await reqCategoryList();
-      console.log('分类列表请求返回结果:', result);  // 打印返回结果
       if (result.code == 200) {
         commit('getCategoryList', result.data);
       }else{

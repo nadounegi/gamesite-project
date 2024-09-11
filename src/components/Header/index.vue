@@ -49,8 +49,6 @@
 
 <script>
 import logo from "@/components/Header/images/logo.png";
-import { mapActions } from "vuex";
-
 export default {
   name: "Header",
   data() {
@@ -60,20 +58,24 @@ export default {
     };
   },
   methods: {
-  ...mapActions('search', ['getSearchResult']),
-  goSearch() {
-    if (this.keyword) {
-      this.getSearchResult({
-        keyword: this.keyword
-      });
-      this.$router.push({
-        name: "search",
-        params: { keyword: this.keyword }
-      });
+    goSearch() {
+     let locations = {
+      name: "search",
+      params: {keyword:this.keyword || undefined},
+     };
+     if(this.$route.query.categoryName){
+      locations.query ={...this.$route.query,keyword:this.keyword};
+     }else{
+      locations.query = {keyword:this.keyword};
+     }
+      this.$router.push(locations);
     }
   },
-},
-
+  mounted(){
+    this.$bus.$on("clearKeyword",() => {
+      this.keyword = "";
+    })
+  }
 };
 </script>
 

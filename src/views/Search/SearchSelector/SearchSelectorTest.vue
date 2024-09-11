@@ -102,12 +102,6 @@ methods: {
 
     return Array.from(uniqueRanges);
   },
-  loadSubCategories(category1Id){
-    this.subCategories = this.getChildren(category1Id);
-    this.getGamePlatforms = this.getUniqueValues('platform');
-    this.getGameGenre = this.getUniqueValues('genre');
-    this.brandmarkList = this.getUniqueValues('brand');
-  },
   getChildren(parentId){
     return this.categoryList.filter(
       (category) => category.parentId === parentId

@@ -10,39 +10,66 @@
               <a href="#">全部结果</a>
             </li>
           </ul>
+          <!-- 選べれだカテゴリー、キーワード、ブランドおよび属性タグ-->
           <ul class="fl sui-tag">
-            <li class="with-x">
-              類型名
-              <i>×</i>
+            <!-- カテゴリータグ -->
+            <li class="with-x" v-if="this.searchParams.categoryName">
+              {{ this.searchParams.categoryName }}
+              <i @click="removeCategory">×</i>
+            </li>
+            <!-- キーワードタグ -->
+            <li class="with-x" v-if="this.searchParams.keyword">
+              {{ this.searchParams.keyword }}<i @click="removeKeyword">×</i>
+            </li>
+            <!-- ブランドタグ -->
+            <li class="with-x" v-if="this.searchParams.brandmark">
+              {{ this.searchParams.brandmark }}
+              <i @click="removeBrandMark">×</i>
+            </li>
+            <!-- 属性タグ -->
+            <li
+              class="with-x"
+              v-for="(value, index) in searchParams.props"
+              :key="value"
+            >
+              {{ value }}
+              <i @click="removeProps(index)">×</i>
             </li>
           </ul>
         </div>
 
-        <!--selector-->
-        <SearchSelector />
+        <!--商品筛选组件-->
+        <SearchSelector
+          :setBrandmark="setBrandmark"
+          :setSearchProps="setSearchProps"
+        ></SearchSelector>
 
-        <!--details-->
+        <!-- 商品展示区 -->
         <div class="details clearfix">
+          <!-- 排序栏 -->
           <div class="sui-navbar">
             <div class="navbar-inner filter">
               <ul class="sui-nav">
-                <li class="active">
-                  <a href="#">综合</a>
+                <!-- 综合排序 -->
+                <li :class="{ active: orderInfo[0] === '1' }">
+                  <a href="javascript:;" @click="orderProduct('1')">
+                    综合
+                    <i
+                      v-show="orderInfo[0] === '1'"
+                      class="iconfont"
+                      :class="orderInfo[1] === 'desc' ? 'icon-down' : 'icon-up'"
+                    ></i>
+                  </a>
                 </li>
-                <li>
-                  <a href="#">销量</a>
-                </li>
-                <li>
-                  <a href="#">新品</a>
-                </li>
-                <li>
-                  <a href="#">评价</a>
-                </li>
-                <li>
-                  <a href="#">价格⬆</a>
-                </li>
-                <li>
-                  <a href="#">价格⬇</a>
+                <li :class="{ active: orderInfo[0] === '2' }">
+                  <a href="javascript:;" @click="orderProduct('2')">
+                    价格
+                    <i
+                      v-show="orderInfo[0] === '2'"
+                      class="iconfont"
+                      :class="orderInfo[1] === 'desc' ? 'icon-down' : 'icon-up'"
+                    ></i>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -52,28 +79,32 @@
             <ul class="yui3-g">
               <li
                 class="yui3-u-1-5"
-                v-for="item in getGoodsList"
-                :key="item.game_id"
+                v-for="good in filterGoodsList"
+                :key="good.game_id"
+                :data-id="good.game_id"
               >
                 <div class="list-wrap">
                   <div class="p-img">
                     <a href="#" target="_blank"
-                      ><img :src="item.img_url" width="210px" height="80px"
+                      ><img :src="good.img_url" width="210px" height="80px"
                     /></a>
                   </div>
                   <div class="price">
                     <strong>
                       <em>¥</em>
-                      <i>{{ item.price }}</i>
+                      <i>{{ good.price }}</i>
                     </strong>
                   </div>
                   <div class="attr">
-                    <em>{{ item.game_name }}</em>
-                    <p>{{ getGameBrand(item.attributes_summary) }}</p>
-                    <p>{{ getGameType(item.attributes_summary) }}</p>
+                    <em>{{ good.game_name }}</em>
+                    <p>{{ getGameBrand(good.attributes_summary) }}</p>
+                    <p>{{ getGameType(good.attributes_summary) }}</p>
                   </div>
                   <div class="commit">
-                    <i class="command">残り在庫数<span>{{ item.stock }}</span>件</i>
+                    <i class="command"
+                      >残り在庫数<span>{{ good.stock }}</span
+                      >件</i
+                    >
                   </div>
                   <div class="operate">
                     <a
@@ -127,27 +158,119 @@
   
   <script>
 import SearchSelector from "./SearchSelector/SearchSelector.vue";
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters } from "vuex";
 
 export default {
   name: "search",
   components: {
     SearchSelector,
   },
-  computed: {
-    ...mapGetters("search", ["goodsList", "brandmarkList", "attrsList"]),
-
-    getGoodsList() {
-      if (this.goodsList.length === 0) {
-        return this.goodsList;
-      }
-      return this.goodsList.filter((item) => {
-        return item.attributes_summary;
-      });
+  data() {
+    return {
+      //サーバーに渡すパラメータ
+      searchParams: {
+        category1Id: "", //一级分类的id
+        category2Id: "", //二级分类的id
+        category3Id: "", //三级分类的id
+        categoryName: "", //商品的名字
+        keyword: "", //用户搜索的关键字
+        props: [], //商品属性的搜索条件
+        brandmark: "", //品牌的搜索条件
+        order: "1:desc", //排序的参数 【默认初始值:1:desc】
+        minPrice: 0, //最小价格
+        maxPrice: Number.MAX_VALUE, //最大价格
+        pageNo: 1, //当前分页器的页码  【默认初始值:1】
+        pageSize: 10, //代表当前一页显示几条数据 【默认初始值:10】
+      },
+    };
+  },
+  watch: {
+    $route: {
+      handler(toParams, fromParams) {
+        this.updateParams();
+        this.getData();
+      },
+      immediate: true,
     },
   },
-  methods:{
-    ...mapActions('search',['getSearchResult']),
+  mounted() {
+    console.log("当前的查询参数:", this.$route.params.keyword);
+  },
+  methods: {
+    orderProduct(orderType) {
+      let [orderField, type] = this.orderInfo;
+      if (orderField === orderType) {
+        type = type === "desc" ? "asc" : "desc";
+      } else {
+        type = "desc";
+      }
+      this.searchParams.order = orderType + ":" + type;
+      this.getData();
+    },
+    removeProps(index) {
+      this.searchParams.props.splice(index, 1);
+      this.getData();
+    },
+    setSearchProps(value) {
+      if (!this.searchParams.props.includes(value)) {
+        this.searchParams.props.push(value);
+        this.getData();
+      }
+    },
+    removeBrandMark() {
+      this.$delete(this.searchParams, "brandmark");
+      this.getData();
+    },
+    setBrandmark(brandmark) {
+      //更改品牌
+      if (this.searchParams.brandmark != brandmark) {
+        this.$set(this.searchParams, "brandmark", brandmark);
+        this.getData();
+      }
+    },
+    removeCategory() {
+      this.searchParams.category1Id = "";
+      this.searchParams.category2Id = "";
+      this.searchParams.category3Id = "";
+      this.searchParams.categoryName = "";
+
+      this.$router.replace({
+        name: "search",
+        params: this.$route.params,
+      });
+      this.getData();
+    },
+    removeKeyword() {
+      this.searchParams.keyword = "";
+      this.$router.replace({
+        name: "search",
+        query: this.$route.query,
+      });
+      this.$bus.$emit("clearKeyword");
+    },
+    updateParams() {
+      let { keyword } = this.$route.params; // 获取关键词
+      let { category1Id, category2Id, category3Id, categoryName } =
+        this.$route.query; // 获取分类信息
+
+      this.searchParams = {
+        ...this.searchParams,
+        keyword,
+        category1Id,
+        category2Id,
+        category3Id,
+        categoryName,
+      };
+      console.log("当前的查询参数:", this.searchParams.categoryName); // 打印当前的查询参数，确认是否正确
+      console.log("当前的关键词:", this.searchParams.keyword);
+    },
+    applyPriceFilter({ minPrice, maxPrice }) {
+      //价格筛选
+      this.searchParams.minPrice = minPrice;
+      this.searchParams.maxPrice = maxPrice;
+      this.getData();
+    },
+
     getGameType(attributes_summary) {
       const match = attributes_summary.match(/ジャンル:([^,]+)/);
       return match ? match[1] : "ジャンル情報なし";
@@ -156,16 +279,44 @@ export default {
       const match = attributes_summary.match(/ブランド:([^,]+)/);
       return match ? match[1] : "ブランド情報なし";
     },
+    /* 发送更新后的查询ajax请求 */
+    getData(newPage = 1) {
+      this.searchParams.pageNo = newPage;
+      console.log("当前的查询参数:", this.searchParams); // 打印当前的查询参数，确认是否正确
+      this.$store
+        .dispatch("search/getSearchResult", this.searchParams)
+        .then(() => {
+          console.log("获取到的商品数据:", this.goodsList); // 打印商品列表，确认后端返回的数据是否正确
+        });
+    },
   },
-  mounted() {
-    this.getSearchResult()
-    .then(() => {
-      console.log('搜索结果获取成功');
-    })
-    .catch(error => {
-      console.error('获取搜索结果失败:', error);
-    });
-  }
+  computed: {
+    ...mapGetters("search", [
+      "goodsList",
+      "brandmarkList",
+      "attrsList",
+      "totalPage",
+    ]),
+    filterGoodsList() {
+      return this.goodsList.filter((good) => {
+        // 确保关键词匹配游戏名称或属性摘要
+        const matchesKeyword =
+          !this.searchParams.keyword ||
+          good.game_name.includes(this.searchParams.keyword) ||
+          good.attributes_summary.includes(this.searchParams.keyword);
+
+        // 如果有分类信息，也确保分类匹配
+        const matchesCategory =
+          !this.searchParams.categoryName ||
+          good.attributes_summary.includes(this.searchParams.categoryName);
+
+        return matchesKeyword && matchesCategory;
+      });
+    },
+    orderInfo() {
+      return this.searchParams.order.split(":");
+    },
+  },
 };
 </script>
   
