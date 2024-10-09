@@ -33,7 +33,7 @@
                   <!-- 二級分類 -->
                   <div
                     class="subitem"
-                    v-for="(c2, index) in c1.categoryChild"
+                    v-for="(c2, index) in c1.children"
                     :key="c2.categoryId"
                   >
                     <dl class="fore">
@@ -47,7 +47,7 @@
                       </dt>
                       <dd>
                         <em
-                          v-for="(c3, index) in c2.categoryChild"
+                          v-for="(c3, index) in c2.children"
                           :key="c3.categoryId"
                         >
                           <a
@@ -75,15 +75,14 @@
   </div>
 </template>
 
-
 <script>
 import { mapState } from "vuex";
-import throttle from "/node_modules/lodash/throttle.js";
+import throttle from "../../../node_modules/lodash/throttle.js";
 export default {
   name: "TypeNav",
   data() {
     return {
-      //マウスがどのカテゴリーに乗せるかを判断する
+      // マウスがどのカテゴリーに乗せるかを判断する
       currentIndex: -1,
       show: true,
     };
@@ -96,7 +95,7 @@ export default {
     leaveHandler() {
       this.currentIndex = -1;
       if (this.$route.path != "/home") {
-        //ホームページ以外のページに行くと、カテゴリーが消える
+        // ホームページ以外のページに行くと、カテゴリーが消える
         this.show = false;
       }
     },
@@ -106,16 +105,21 @@ export default {
       }
     },
     goSearch(event) {
-      let { categoryname, category1id, category2id, category3id } =
+      const { categoryname, category1id, category2id, category3id } =
         event.target.dataset;
-      let query = {};
-      if (category3id) query.category3id = category3id; // 优先传递三级分类
-      else if (category2id)
+      const query = {};
+      if (category3id) {
+        query.category3id = category3id; // 优先传递三级分类
+      } else if (category2id) {
         query.category2id = category2id; // 如果没有三级分类，传递二级分类
-      else if (category1id) query.category1id = category1id; // 如果没有二级分类，传递一级分类
+      } else if (category1id) {
+        query.category1id = category1id; // 如果没有二级分类，传递一级分类
+      }
 
-      if (categoryname) query.categoryName = categoryname; // 分类名称
-
+      if (categoryname) {
+        query.categoryName = categoryname; // 分类名称
+      }
+      console.log("查询参数", query);
       this.$router.push({
         name: "search",
         query,
@@ -129,12 +133,17 @@ export default {
     }
   },
   created() {
-    //这个一定要添，否则不出数据
-    this.$store.dispatch("home/fetchCategoryList");
+    // 这个一定要添，否则不出数据
+    this.$store.dispatch('home/fetchCategoryList').then(() => {
+  }).catch(error => {
+    console.error("Error fetching category list:", error);
+  });
+
   },
   computed: {
     ...mapState({
-      categoryList: (state) => state.home.categoryList,
+      categoryList: state => state.home.categoryList,
+      error: state => state.home.error, // 用来获取错误信息
     }),
   },
 };

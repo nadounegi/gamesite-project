@@ -4,21 +4,23 @@
       <ul>
         <li>
           <h2><slot name="title"></slot></h2>
-
-          <div class="img-item" v-for="item in items" :key="item.gameId">
-            <div class="tab-pic">
-                <img :src="item.url" />
-            </div>
+          <div class="img-item" v-for="item in items" :key="item.title">
+            <p class="tab-pic">
+              <a :href="item.link">
+                <p>{{ item.image_url }}</p>
+                <img :src="item.img_url" />
+              </a>
+            </p>
             <div class="tab-info">
               <div class="info-title">
                 <a href="#">
-                  {{ item.gameName }}
+                  {{ item.game_name }}
                 </a>
-                <h1>{{item.brand.brandName}}</h1>
-                <h1>{{item.genre.genreName}}</h1>
+                <h1>{{ getGameBrand(item.attributes_summary) }}</h1>
+                <h1>{{ getGameType(item.attributes_summary) }}</h1>
               </div>
-              <p class="info-price">定金:¥{{item.price}}</p>
-              <p class="stock">在庫残り{{item.stock}}件</p>
+              <p class="info-price">定金:¥{{ item.price }}</p>
+              <p class="stock">在庫残り{{ item.stock }}</p>
             </div>
           </div>
         </li>
@@ -29,17 +31,25 @@
 
 <script>
 export default {
-  name: "goodsList",
+  name: 'goodsList',
   props: {
     items: {
       type: Array,
-      default: () => [],
-    },
+      required: true
+    }
   },
-  created() {
-    console.log("Game list items:", this.items);
+  methods: {
+    getGameType (attributes_summary) {
+      const match = attributes_summary.match(/ジャンル:([^,]+)/)
+      return match ? match[1] : 'ジャンル情報なし'
+    },
+    getGameBrand (attributes_summary) {
+      const match = attributes_summary.match(/ブランド:([^,]+)/)
+      return match ? match[1] : 'ブランド情報なし'
+    }
+
   }
-};
+}
 </script>
 
 <style lang="less" scoped>
@@ -117,6 +127,7 @@ export default {
               display: block;
               line-height: 24px;
               margin: 0px auto 0;
+
             }
           }
         }

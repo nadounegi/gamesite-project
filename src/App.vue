@@ -6,16 +6,16 @@
 </template>
 
 <script>
-import Header from './components/Header/index.vue';
+import Header from './components/Header/index.vue'
 export default {
   name: '',
   components: {
     Header
   },
-  mounted(){
+  mounted () {
 
   }
-};
+}
 </script>
 
 <style >
@@ -24,6 +24,5 @@ export default {
   margin: 0;
   padding: 0;
 }
-
 
 </style>

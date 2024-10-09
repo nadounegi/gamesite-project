@@ -7,7 +7,10 @@
           <li
             v-for="(brandmark, index) in brandmarkList"
             :key="brandmark.brand_id"
-            @click="setBrandmark(`${brandmark.brand_id}:${brandmark.brand_name}`)">
+            @click="
+              setBrandmark(`${brandmark.brand_id}:${brandmark.brand_name}`)
+            "
+          >
             {{ brandmark.brand_name }}
           </li>
         </ul>
@@ -19,7 +22,7 @@
     </div>
     <div
       class="type-wrap"
-      v-for="(attr, index) in attrsList"
+      v-for="(attr, index) in FilterAttrsList"
       :key="attr.attribute_id"
     >
       <div class="fl key">{{ attr.attr_name }}</div>
@@ -58,63 +61,75 @@
     </div>
   </div>
 </template>
-  
-  <script>
-import { mapGetters } from "vuex";
+
+<script>
+import { mapGetters } from 'vuex'
 
 export default {
-  name: "SearchSelector",
+  name: 'SearchSelector',
   computed: {
-    ...mapGetters("search", ["brandmarkList", "attrsList"]),
+    ...mapGetters('search', ['brandmarkList', 'attrsList'])
   },
   props: {
     setBrandmark: Function,
     setSearchProps: Function,
-    applyPriceFilter: Function,
+    applyPriceFilter: Function
   },
+
   methods: {
-    addPropsItem(event, attribute_id, attr_name) {
-      if (event.target.nodeName.toUpperCase() === "LI") {
-        this.setSearchProps(
-          `${attribute_id}:${event.target.textContent} : ${attr_name}`
-        );
+    addPropsItem (event, attribute_id, attr_name) {
+      if (event.target.nodeName.toUpperCase() === 'LI') {
+        const selectedValue = `${attribute_id}:${event.target.textContent}:${attr_name}`
+        console.log('选择的属性:', selectedValue) // 打印选择的属性，调试用
+        this.setSearchProps(selectedValue)
       }
     },
-    getUniqueValues(filed) {
+    getUniqueValues (filed) {
       if (!this.subCategories || this.subCategories.length === 0) {
-        return [];
+        return []
       }
-      const values = this.subCategories.map((category) => category[filed]);
-      return [...new Set(values)];
+      const values = this.subCategories.map((category) => category[filed])
+      return [...new Set(values)]
     },
-    calculatePriceRanges() {
+    calculatePriceRanges () {
       return [
-        { label: "0-1000円", min: 0, max: 1000 },
-        { label: "1000-3000円", min: 1000, max: 3000 },
-        { label: "3000-5000円", min: 3000, max: 5000 },
-        { label: "5000-7000円", min: 5000, max: 7000 },
-        { label: "7000-10000円", min: 7000, max: 10000 },
-        { label: "10000以上", min: 10000, max: Number.MAX_VALUE },
-      ];
+        { label: '0-1000円', min: 0, max: 1000 },
+        { label: '1000-3000円', min: 1000, max: 3000 },
+        { label: '3000-5000円', min: 3000, max: 5000 },
+        { label: '5000-7000円', min: 5000, max: 7000 },
+        { label: '7000-10000円', min: 7000, max: 10000 },
+        { label: '10000以上', min: 10000, max: Number.MAX_VALUE }
+      ]
     },
-    handlePriceClick(minPrice, maxPrice) {
-      this.$emit("applyPriceFilter", { minPrice, maxPrice });
+    handlePriceClick (minPrice, maxPrice) {
+      this.$emit('applyPriceFilter', { minPrice, maxPrice })
+      this.getData() // 确保更新结果
     },
+    loadSubCategories (category1Id) {
+      this.subCategories = this.getChildren(category1Id)
+      this.getGamePlatforms = this.getUniqueValues('platform')
+      this.getGameGenre = this.getUniqueValues('genre')
+      this.brandmarkList = this.getUniqueValues('brand')
+    },
+    getChildren (parentId) {
+      return this.categoryList.filter(
+        (category) => category.parentId === parentId
+      )
+    }
   },
-  loadSubCategories(category1Id) {
-    this.subCategories = this.getChildren(category1Id);
-    this.getGamePlatforms = this.getUniqueValues("platform");
-    this.getGameGenre = this.getUniqueValues("genre");
-    this.brandmarkList = this.getUniqueValues("brand");
-  },
-  getChildren(parentId) {
-    return this.categoryList.filter(
-      (category) => category.parentId === parentId
-    );
-  },
-};
+  computed: {
+    ...mapGetters('search', ['brandmarkList', 'attrsList']),
+    FilterAttrsList () {
+      return Array.isArray(this.attrsList)
+        ? this.attrsList.filter(
+          (attr) => attr.attr_name === 'ジャンル' || attr.attr_name === '機種'
+        )
+        : []
+    }
+  }
+}
 </script>
-  
+
   <style lang="less" scoped>
 .selector {
   border: 1px solid #ddd;
@@ -170,7 +185,7 @@ export default {
           color: #e1251b;
           font-style: italic;
           font-size: 14px;
-
+          cursor: pointer;
           img {
             max-width: 100%;
             vertical-align: middle;
@@ -184,7 +199,7 @@ export default {
           display: block;
           margin-right: 30px;
           line-height: 26px;
-
+          cursor: pointer;
           a {
             text-decoration: none;
             color: #666;

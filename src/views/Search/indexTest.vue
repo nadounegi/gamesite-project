@@ -13,18 +13,20 @@
           <!-- 選べれだカテゴリー、キーワード、ブランドおよび属性タグ-->
           <ul class="fl sui-tag">
             <!-- カテゴリータグ -->
-            <li class="with-x" v-if="this.searchParams.categoryName">
-              {{ this.searchParams.categoryName }}
-              <i @click="removeCategory">×</i>
+            <!-- <li class="with-x" v-if="this.searchParams.categoryName"> -->
+            <li class="with-x" v-if="searchParams && searchParams.categoryName">
+              {{ searchParams.categoryName }}
+              <i @click="removeItem('category')">×</i>
             </li>
             <!-- キーワードタグ -->
-            <li class="with-x" v-if="this.searchParams.keyword">
-              {{ this.searchParams.keyword }}<i @click="removeKeyword">×</i>
+            <li class="with-x" v-if="searchParams && searchParams.keyword">
+              {{ searchParams.keyword }}
+              <i @click="removeItem('keyword')">×</i>
             </li>
             <!-- ブランドタグ -->
-            <li class="with-x" v-if="this.searchParams.brandmark">
-              {{ this.searchParams.brandmark }}
-              <i @click="removeBrandMark">×</i>
+            <li class="with-x" v-if="searchParams && searchParams.brandmark">
+              {{ searchParams.brandmark }}
+              <i @click="removeItem('brandmark')">×</i>
             </li>
             <!-- 属性タグ -->
             <li
@@ -33,8 +35,10 @@
               :key="value"
             >
               {{ value }}
-              <i @click="removeProps(index)">×</i>
+              <i @click="removeItem('prop', index)">×</i>
             </li>
+            <!-- 清空所有 -->
+            <li v-if="hasActiveFilters" @click="clearAllFilters">清空所有</li>
           </ul>
         </div>
 
@@ -79,7 +83,7 @@
             <ul class="yui3-g">
               <li
                 class="yui3-u-1-5"
-                v-for="good in goodsList"
+                v-for="good in filterGoodsList"
                 :key="good.game_id"
                 :data-id="good.game_id"
               >
@@ -155,213 +159,195 @@
     </div>
   </div>
 </template>
-  
-  <script>
-import SearchSelector from "./SearchSelector/SearchSelector.vue";
-import { mapGetters, mapState } from "vuex";
+
+<script>
+import SearchSelector from './SearchSelector/SearchSelector.vue'
+import { mapGetters } from 'vuex'
 
 export default {
-  name: "search",
-  data() {
-    return {
-      //サーバーに渡すパラメータ
-      searchParams: {
-        category1Id: "", //一级分类的id
-        category2Id: "", //二级分类的id
-        category3Id: "", //三级分类的id
-        categoryName: "", //商品的名字
-        keyword: "", //用户搜索的关键字
-        props: [], //商品属性的搜索条件
-        brandmark: "", //品牌的搜索条件
-        order: "1:desc", //排序的参数 【默认初始值:1:desc】
-        minPrice: 0, //最小价格
-        maxPrice: Number.MAX_VALUE, //最大价格
-        pageNo: 1, //当前分页器的页码  【默认初始值:1】
-        pageSize: 10, //代表当前一页显示几条数据 【默认初始值:10】
-      },
-    };
-  },
+  name: 'search',
   components: {
-    SearchSelector,
+    SearchSelector
   },
-  beforeMount() {
-    // this.searchParams.category1Id = this.$route.query.category1Id;
-    // this.searchParams.category2Id = this.$route.query.category2Id;
-    // this.searchParams.category3Id = this.$route.query.category3Id;
-    // this.searchParams.categoryName = this.$route.query.categoryName;
-    // this.searchParams.keyword = this.$route.params.keyword;
-    //Object.assign ES6の機能で、オブジェクトのコピーを作成する
-    Object.assign(this.searchParams, this.$route.params, this.$route.query);
-    // if (this.$route.params.keyword) {
-    //   this.searchParams.keyword = this.$route.params.keyword;
-    // }
-    // if (this.$route.query.categoryName) {
-    //   this.searchParams.categoryName = this.$route.query.categoryName;
-    // }
+  data () {
+    return {
+      // サーバーに渡すパラメータ
+      searchParams: {
+        category1Id: '', // 一级分类的id
+        category2Id: '', // 二级分类的id
+        category3Id: '', // 三级分类的id
+        categoryName: '', // 商品的名字
+        keyword: '', // 用户搜索的关键字
+        props: [], // 商品属性的搜索条件
+        brandmark: '', // 品牌的搜索条件
+        order: '1:desc', // 排序的参数 【默认初始值:1:desc】
+        minPrice: 0, // 最小价格
+        maxPrice: Number.MAX_VALUE, // 最大价格
+        pageNo: 1, // 当前分页器的页码  【默认初始值:1】
+        pageSize: 10 // 代表当前一页显示几条数据 【默认初始值:10】
+      }
+    }
   },
-  mounted() {
-    this.getData();
+  watch: {
+    $route: {
+      handler (toParams, fromParams) {
+        this.updateParams()
+        this.getData()
+      },
+      immediate: true
+    }
+  },
+  mounted () {
+    console.log('当前搜索参数：', this.searchParams)
   },
   methods: {
-    //サーバーにリクエストしてsearchモジュールデータを取得（パラメータにより異なるデータを表示）
-    //リクエストをメソッドにして、必要な場合に呼び出す
-    getData() {
-      this.$store
-        .dispatch("search/getSearchResult", this.searchParams)
-        .then(() => {
-          console.log("获取到的商品数据:", this.goodsList); // 打印商品列表，确认后端返回的数据是否正确
-          console.log(this.searchParams);
-        });
-    },
-    applyPriceFilter({ minPrice, maxPrice }) {
-      this.searchParams.minPrice = minPrice;
-      this.searchParams.maxPrice = maxPrice;
-      this.getData();
-    },
-    removeCategory() {
-      this.searchParams.category1Id = "";
-      this.searchParams.category2Id = "";
-      this.searchParams.category3Id = "";
-      this.$router.replace({
-        name: "search",
-        params: this.$route.params,
-      });
-      this.getData(); // 更新商品列表
-    },
-    removeKeyword() {
-      this.searchParams.keyword = "";
-      this.$router.replace({
-        name: "search",
-        query: this.$route.query,
-      });
-      this.$bus.$emit("clearKeyword");
-    },
-    orderProduct(orderType) {
-      let [orderField, type] = this.orderInfo;
+    orderProduct (orderType) {
+      let [orderField, type] = this.orderInfo
       if (orderField === orderType) {
-        type = type === "desc" ? "asc" : "desc";
+        type = type === 'desc' ? 'asc' : 'desc'
       } else {
-        type = "desc";
+        type = 'desc'
       }
-      this.searchParams.order = orderType + ":" + type;
-      this.getData();
+      this.searchParams.order = orderType + ':' + type
+      this.getData()
     },
-    getBrandMark(brand_id, brand_name) {
-      console.log("父组件", brand_id, brand_name);
-      this.searchParams.brandmark = `${brand_id}:${brand_name}`;
-      this.getData();
+    removeItem (type, index = null) {
+      if (type === 'category') {
+        this.searchParams.categoryName = ''
+      } else if (type === 'keyword') {
+        this.searchParams.keyword = ''
+      } else if (type === 'brandmark') {
+        this.searchParams.brandmark = ''
+      } else if (type === 'prop' && index !== null) {
+        this.searchParams.props.splice(index, 1)
+      }
+      this.getData()
     },
-    setSearchProps(value) {
+    clearAllFilters () {
+      this.searchParams = {
+        category1Id: '', // 一级分类的id
+        category2Id: '', // 二级分类的id
+        category3Id: '', // 三级分类的id
+        categoryName: '', // 商品的名字
+        keyword: '', // 用户搜索的关键字
+        props: [], // 商品属性的搜索条件
+        brandmark: '', // 品牌的搜索条件
+        order: '1:desc', // 排序的参数 【默认初始值:1:desc】
+        minPrice: 0, // 最小价格
+        maxPrice: Number.MAX_VALUE, // 最大价格
+        pageNo: 1, // 当前分页器的页码  【默认初始值:1】
+        pageSize: 10 // 代表当前一页显示几条数据 【默认初始值:10】
+      }
+      this.getData()
+    },
+    setSearchProps (value) {
       if (!this.searchParams.props.includes(value)) {
-        this.searchParams.props.push(value);
-        this.getData();
+        this.searchParams.props.push(value)
+        console.log('更新后的搜索属性：', this.searchParams.props) // 打印更新后的搜索属性
+        this.getData() // 发送更新后的数据到后端
       }
     },
-    removeBrandMark() {
-      this.$delete(this.searchParams, "brandmark");
-      this.getData();
-    },
-    setBrandmark(brandmark) {
-      if ((this.searchParams, "brandmark", brandmark));
-      this.getData();
-    },
-    getAttrAndAttrValue(attribute_id, attr_name, attrValue) {
-      let newProps = `${attribute_id}:${attrValue}:${attr_name}`;
-      if (this.searchParams.props.indexOf(newProps) == -1) {
-        this.getData();
+    setBrandmark (brandmark) {
+      // 更改品牌
+      if (this.searchParams.brandmark != brandmark) {
+        this.$set(this.searchParams, 'brandmark', brandmark)
+        this.getData()
       }
-      console.log(newProps);
     },
-    removeProps(index) {
-      this.searchParams.props.splice(index, 1);
-      this.getData();
-    },
+    updateParams () {
+      const { keyword } = this.$route.params // 获取关键词
+      const { category1Id, category2Id, category3Id, categoryName } =
+        this.$route.query // 获取分类信息
 
-    sort(flag) {
-      let originFlag = this.searchParams.order.split(":")[0];
-      let originSortType = this.searchParams.order.split(":")[1];
-      let newOrder = "";
-      if (flag == originFlag) {
-        newOrder = `${originFlag}:${originSortType} == "desc" ? "asc" : "desc"`;
-      } else {
-        newOrder = `${flag}:desc`;
+      this.searchParams = {
+        ...this.searchParams,
+        keyword,
+        category1Id,
+        category2Id,
+        category3Id,
+        categoryName
       }
-      this.searchParams.order = newOrder;
-      this.getData();
     },
-    // handleFilterGames() {
-    //   const { category1Id,category2Id,category3Id,brandmark,priceRange } = this.searchParams;
-
-    //   this.filteredGoodsList = this.goodsList.filter((item) =>{
-    //     let matchesCategory1 = true;
-    //     let matchesCategory2 = true;
-    //     let matchesCategory3 = true;
-    //     let matchesBrand = true;
-    //     let matchesPrice = true;
-
-    //     // 匹配一级分类
-    //     if(category1Id){
-    //       matchesCategory1 = item.category1_id === category1Id;
-    //     }
-    //     // 匹配二级分类
-    //     if(category2Id){
-    //       matchesCategory2 = item.category2Id === category2Id;
-    //     }
-    //     // 匹配三级分类
-    //     if(category3Id){
-    //       matchesCategory3 = item.category3Id === category3Id;
-    //     }
-    //     // 匹配品牌
-    //     if(brandmark){
-    //       matchesBrand = item.brandmark === brandmark;
-    //     }
-    //     // 匹配价格区间
-    //     if(priceRange){
-    //       matchesPrice = item.price >= priceRange.min && item.price <= priceRange.max;
-    //     }
-    //     return matchesCategory1 && matchesCategory2 && matchesCategory3 && matchesBrand && matchesPrice;
-    //   });
-    //   console.log("筛选后的商品列表:", this.filteredGoodsList);
-    // },
-    getGameType(attributes_summary) {
-      const match = attributes_summary.match(/ジャンル:([^,]+)/);
-      return match ? match[1] : "ジャンル情報なし";
+    applyPriceFilter ({ minPrice, maxPrice }) {
+      // 价格筛选
+      this.searchParams.minPrice = minPrice
+      this.searchParams.maxPrice = maxPrice
+      this.getData()
     },
-    getGameBrand(attributes_summary) {
-      const match = attributes_summary.match(/ブランド:([^,]+)/);
-      return match ? match[1] : "ブランド情報なし";
+    getGameType (attributes_summary) {
+      const match = attributes_summary.match(/ジャンル:([^,]+)/)
+      return match ? match[1] : 'ジャンル情報なし'
     },
+    getGameBrand (attributes_summary) {
+      const match = attributes_summary.match(/ブランド:([^,]+)/)
+      return match ? match[1] : 'ブランド情報なし'
+    },
+    /* 发送更新后的查询ajax请求 */
+    getData (newPage = 1) {
+      this.searchParams.pageNo = newPage
+      console.log('发送到后端的查询参数：', this.searchParams) // 确认发送参数
+      this.$store
+        .dispatch('search/getSearchResult', this.searchParams)
+        .then(() => {
+          console.log('获取到的商品数据:', this.goodsList) // 打印商品列表，确认后端返回的数据是否正确
+        })
+    }
   },
+
   computed: {
-    ...mapGetters("search", ["goodsList", "brandmarkList", "attrsList"]),
-    // displayGoodsList() {
-    //   if (this.filteredGoodsList && this.filteredGoodsList.length > 0) {
-    //     return this.filteredGoodsList;
-    //   }
-    //   if (this.goodsList && this.goodsList.length > 0) {
-    //     return this.goodsList;
-    //   }
-    //   return [];
-    // },
-    orderInfo() {
-      return this.searchParams.order.split(":");
+    ...mapGetters('search', [
+      'goodsList',
+      'brandmarkList',
+      'attrsList',
+      'totalPage'
+    ]),
+    hasActiveFilters () {
+      return (
+        this.searchParams.categoryName ||
+        this.searchParams.keyword ||
+        this.searchParams.brandmark ||
+        this.searchParams.props.length > 0
+      )
     },
-  },
 
-  watch: {
-    $route(newRoute) {
-      this.searchParams.category1Id = undefined;
-      this.searchParams.category2Id = undefined;
-      this.searchParams.category3Id = undefined;
-      Object.assign(this.searchParams, newRoute.query, newRoute.params);
-      this.getData();
-      //每一次请求完毕，应该把1，2，3级分类的id清空，让它接收下一次相应的1，2，3级分类的id
+    filterGoodsList () {
+      // 三級分類导航栏点击跳转搜索 TypeNav.vue
+      return this.goodsList.filter((good) => {
+        const matchesCategory =
+          !this.searchParams.categoryName ||
+          good.attributes_summary.includes(
+            `ジャンル:${this.searchParams.categoryName}`
+          ) ||
+          good.attributes_summary.includes(
+            `機種:${this.searchParams.categoryName}`
+          ) ||
+          good.attributes_summary.includes(
+            `ブランド:${this.searchParams.categoryName}`
+          )
+
+        console.log('商品属性概要：', good.attributes_summary) // 打印商品的属性概要
+        console.log(
+          '当前 props:',
+          JSON.parse(JSON.stringify(this.searchParams.props))
+        ) // 打印搜索属性
+
+        const matchesProps = this.searchParams.props.every((prop) => {
+          const [attrId, attrValue] = prop.split(':')
+          return good.attributes_summary.includes(`属性${attrId}:${attrValue}`)
+        })
+
+        return matchesCategory && matchesProps
+      })
     },
-  },
-};
+
+    orderInfo () {
+      return this.searchParams.order.split(':')
+    }
+  }
+}
 </script>
-  
-  <style lang="less" scoped>
+
+<style lang="less" scoped>
 .main {
   margin: 10px 0;
 

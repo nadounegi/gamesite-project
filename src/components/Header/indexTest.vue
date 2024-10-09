@@ -68,92 +68,91 @@
     </div>
   </template>
 
-  <script>
-  import debounce from "lodash/debounce";
-  import { mapActions,mapGetters } from "vuex";
-  export default {
-    name: "TypeNav",
-    data() {
-      return {
-        //マウスがどのカテゴリーに乗せるかを判断する
-        currentIndex: -1,
-        isShow: true,
-      };
+<script>
+import debounce from 'lodash/debounce'
+import { mapActions, mapGetters } from 'vuex'
+export default {
+  name: 'TypeNav',
+  data () {
+    return {
+      // マウスがどのカテゴリーに乗せるかを判断する
+      currentIndex: -1,
+      isShow: true
+    }
+  },
+  // コンポーネントが載せれると、サーバーにリクエストを送る
+  mounted () {
+    // コンポーネントが載せられると、isShowをfalseにする
+    if (this.$route.path !== '/home') this.isShow = false
+  },
+  created () {
+    this.fetchCategoryList()
+  },
+  computed: {
+    ...mapGetters('home', ['categoryList']),
+    // 防抖
+    debouncedChangeIndex () {
+      return debounce(this.changeIndex, 500)
+    }
+  },
+  methods: {
+    ...mapActions('search', ['addCategory', 'removeCategory', 'getSearchResult']),
+    ...mapActions('home', ['fetchCategoryList']),
+    // mouseenterイベントを使って,レスポンシブデータcurrentIndexを変更する
+    // マウスに乗せたカテゴリーの色を変えるため
+    changeIndex (index) {
+      // indexは、マウスに乗せたカテゴリーのインデックス
+      this.currentIndex = index
     },
-    //コンポーネントが載せれると、サーバーにリクエストを送る
-    mounted() {
-      //コンポーネントが載せられると、isShowをfalseにする
-      if (this.$route.path !== "/home") this.isShow = false;
-      
+    entershow () {
+      this.isShow = true
     },
-    created(){
-      this.fetchCategoryList();
+    // mouseleaveイベントを使って、レスポンシブデータcurrentIndexを変更する
+    // マウスがカテゴリーから離れた時、カテゴリーの色を元に戻す
+    leaveShow () {
+      // searchコンポーネントの場合は、マウスがカテゴリーから離れた時、カテゴリーを隠す
+      if (this.$route.path !== '/home') {
+        this.isShow = false
+      }
+      this.currentIndex = -1
     },
-    computed: {
-      ...mapGetters('home', ['categoryList']),
-      //防抖
-      debouncedChangeIndex() {
-        return debounce(this.changeIndex, 500);
-      },
-    },
-    methods: {
-      ...mapActions('search',['addCategory','removeCategory','getSearchResult']),
-      ...mapActions('home',['fetchCategoryList']),
-      //mouseenterイベントを使って,レスポンシブデータcurrentIndexを変更する
-      //マウスに乗せたカテゴリーの色を変えるため
-      changeIndex(index) {
-        //indexは、マウスに乗せたカテゴリーのインデックス
-        this.currentIndex = index;
-      },
-      entershow() {
-        this.isShow = true;
-      },
-      //mouseleaveイベントを使って、レスポンシブデータcurrentIndexを変更する
-      //マウスがカテゴリーから離れた時、カテゴリーの色を元に戻す
-      leaveShow() {
-        //searchコンポーネントの場合は、マウスがカテゴリーから離れた時、カテゴリーを隠す
-        if (this.$route.path !== "/home") {
-          this.isShow = false;
-        }
-        this.currentIndex = -1;
-      },
-      //カテゴリーをクリックすると、検索ページに飛ぶ
-      goSearch(event) {
-        let element = event.target;
-        let { categoryname, category1id, category2id, category3id } = element.dataset;
-        let selectCategory = {
-            name: categoryname,
-            id: category1id || category2id || category3id,
-        };
+    // カテゴリーをクリックすると、検索ページに飛ぶ
+    goSearch (event) {
+      const element = event.target
+      const { categoryname, category1id, category2id, category3id } = element.dataset
+      const selectCategory = {
+        name: categoryname,
+        id: category1id || category2id || category3id
+      }
 
-        this.addCategory(selectCategory);
-        
-        if (categoryname) {
-            let location = { 
-                name: "search",
-                params: { keyword: categoryname },
-                query: {} 
-            };
-            //カテゴリーのidをクエリに追加する
-            if (category1id) {
-                location.query.category1Id = category1id;
-            } else if (category2id) {
-                location.query.category2Id = category2id;
-            } else {
-                location.query.category3Id = category3id;
-            }
-     
-            location.query.categoryName = categoryname;
-            this.$router.push(location);
+      this.addCategory(selectCategory)
+
+      if (categoryname) {
+        const location = {
+          name: 'search',
+          params: { keyword: categoryname },
+          query: {}
         }
+        // カテゴリーのidをクエリに追加する
+        if (category1id) {
+          location.query.category1Id = category1id
+        } else if (category2id) {
+          location.query.category2Id = category2id
+        } else {
+          location.query.category3Id = category3id
+        }
+
+        location.query.categoryName = categoryname
+        this.$router.push(location)
+      }
     },
-      //マウスがカテゴリーに乗せると、カテゴリーの詳細を表示する
-      entershow() {
-        this.isShow = true;
-      },
-    },
-  };
-  </script>
+    // マウスがカテゴリーに乗せると、カテゴリーの詳細を表示する
+    entershow () {
+      this.isShow = true
+    }
+  }
+}
+</script>
 
   <style lang="less" scoped>
   .type-nav {

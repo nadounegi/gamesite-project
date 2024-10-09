@@ -48,35 +48,35 @@
 </template>
 
 <script>
-import logo from "@/components/Header/images/logo.png";
+import logo from '@/components/Header/images/logo.png'
 export default {
-  name: "Header",
-  data() {
+  name: 'Header',
+  data () {
     return {
       logo,
-      keyword: "",
-    };
-  },
-  methods: {
-    goSearch() {
-     let locations = {
-      name: "search",
-      params: {keyword:this.keyword || undefined},
-     };
-     if(this.$route.query.categoryName){
-      locations.query ={...this.$route.query,keyword:this.keyword};
-     }else{
-      locations.query = {keyword:this.keyword};
-     }
-      this.$router.push(locations);
+      keyword: ''
     }
   },
-  mounted(){
-    this.$bus.$on("clearKeyword",() => {
-      this.keyword = "";
+  methods: {
+    goSearch () {
+      const locations = {
+        name: 'search',
+        params: { keyword: this.keyword || undefined }
+      }
+      if (this.$route.query.categoryName) {
+        locations.query = { ...this.$route.query, keyword: this.keyword }
+      } else {
+        locations.query = { keyword: this.keyword }
+      }
+      this.$router.push(locations)
+    }
+  },
+  mounted () {
+    this.$bus.$on('clearKeyword', () => {
+      this.keyword = ''
     })
   }
-};
+}
 </script>
 
 <style lang="less" scoped>

@@ -13,18 +13,20 @@
           <!-- 選べれだカテゴリー、キーワード、ブランドおよび属性タグ-->
           <ul class="fl sui-tag">
             <!-- カテゴリータグ -->
-            <li class="with-x" v-if="this.searchParams.categoryName">
-              {{ this.searchParams.categoryName }}
-              <i @click="removeCategory">×</i>
+            <!-- <li class="with-x" v-if="this.searchParams.categoryName"> -->
+            <li class="with-x" v-if="searchParams && searchParams.categoryName">
+              {{ searchParams.categoryName }}
+              <i @click="removeItem('category')">×</i>
             </li>
             <!-- キーワードタグ -->
-            <li class="with-x" v-if="this.searchParams.keyword">
-              {{ this.searchParams.keyword }}<i @click="removeKeyword">×</i>
+            <li class="with-x" v-if="searchParams && searchParams.keyword">
+              {{ searchParams.keyword }}
+              <i @click="removeItem('keyword')">×</i>
             </li>
             <!-- ブランドタグ -->
-            <li class="with-x" v-if="this.searchParams.brandmark">
-              {{ this.searchParams.brandmark }}
-              <i @click="removeBrandMark">×</i>
+            <li class="with-x" v-if="searchParams && searchParams.brandmark">
+              {{ searchParams.brandmark }}
+              <i @click="removeItem('brandmark')">×</i>
             </li>
             <!-- 属性タグ -->
             <li
@@ -33,8 +35,10 @@
               :key="value"
             >
               {{ value }}
-              <i @click="removeProps(index)">×</i>
+              <i @click="removeItem('prop', index)">×</i>
             </li>
+            <!-- 清空所有 -->
+            <li v-if="hasActiveFilters" @click="clearAllFilters">清空所有</li>
           </ul>
         </div>
 
@@ -194,7 +198,7 @@ export default {
     },
   },
   mounted() {
-    console.log("当前的查询参数:", this.$route.params.keyword);
+    console.log("当前搜索参数：", this.searchParams);
   },
   methods: {
     orderProduct(orderType) {
@@ -207,19 +211,41 @@ export default {
       this.searchParams.order = orderType + ":" + type;
       this.getData();
     },
-    removeProps(index) {
-      this.searchParams.props.splice(index, 1);
+    removeItem(type, index = null) {
+      if (type === "category") {
+        this.searchParams.categoryName = "";
+      } else if (type === "keyword") {
+        this.searchParams.keyword = "";
+      } else if (type === "brandmark") {
+        this.searchParams.brandmark = "";
+      } else if (type === "prop" && index !== null) {
+        this.searchParams.props.splice(index, 1);
+      }
+      this.getData();
+    },
+    clearAllFilters() {
+      this.searchParams = {
+        category1Id: "", //一级分类的id
+        category2Id: "", //二级分类的id
+        category3Id: "", //三级分类的id
+        categoryName: "", //商品的名字
+        keyword: "", //用户搜索的关键字
+        props: [], //商品属性的搜索条件
+        brandmark: "", //品牌的搜索条件
+        order: "1:desc", //排序的参数 【默认初始值:1:desc】
+        minPrice: 0, //最小价格
+        maxPrice: Number.MAX_VALUE, //最大价格
+        pageNo: 1, //当前分页器的页码  【默认初始值:1】
+        pageSize: 10, //代表当前一页显示几条数据 【默认初始值:10】
+      };
       this.getData();
     },
     setSearchProps(value) {
       if (!this.searchParams.props.includes(value)) {
         this.searchParams.props.push(value);
-        this.getData();
+        console.log("更新后的搜索属性：", this.searchParams.props); // 打印更新后的搜索属性
+        this.getData(); // 发送更新后的数据到后端
       }
-    },
-    removeBrandMark() {
-      this.$delete(this.searchParams, "brandmark");
-      this.getData();
     },
     setBrandmark(brandmark) {
       //更改品牌
@@ -227,26 +253,6 @@ export default {
         this.$set(this.searchParams, "brandmark", brandmark);
         this.getData();
       }
-    },
-    removeCategory() {
-      this.searchParams.category1Id = "";
-      this.searchParams.category2Id = "";
-      this.searchParams.category3Id = "";
-      this.searchParams.categoryName = "";
-
-      this.$router.replace({
-        name: "search",
-        params: this.$route.params,
-      });
-      this.getData();
-    },
-    removeKeyword() {
-      this.searchParams.keyword = "";
-      this.$router.replace({
-        name: "search",
-        query: this.$route.query,
-      });
-      this.$bus.$emit("clearKeyword");
     },
     updateParams() {
       let { keyword } = this.$route.params; // 获取关键词
@@ -261,8 +267,6 @@ export default {
         category3Id,
         categoryName,
       };
-      console.log("当前的查询参数:", this.searchParams.categoryName); // 打印当前的查询参数，确认是否正确
-      console.log("当前的关键词:", this.searchParams.keyword);
     },
     applyPriceFilter({ minPrice, maxPrice }) {
       //价格筛选
@@ -270,7 +274,6 @@ export default {
       this.searchParams.maxPrice = maxPrice;
       this.getData();
     },
-
     getGameType(attributes_summary) {
       const match = attributes_summary.match(/ジャンル:([^,]+)/);
       return match ? match[1] : "ジャンル情報なし";
@@ -282,7 +285,7 @@ export default {
     /* 发送更新后的查询ajax请求 */
     getData(newPage = 1) {
       this.searchParams.pageNo = newPage;
-      console.log("当前的查询参数:", this.searchParams); // 打印当前的查询参数，确认是否正确
+      console.log("发送到后端的查询参数：", this.searchParams); // 确认发送参数
       this.$store
         .dispatch("search/getSearchResult", this.searchParams)
         .then(() => {
@@ -290,29 +293,69 @@ export default {
         });
     },
   },
+
   computed: {
     ...mapGetters("search", [
       "goodsList",
       "brandmarkList",
       "attrsList",
-      "totalPage",
     ]),
-    filterGoodsList() {
-      return this.goodsList.filter((good) => {
-        // 确保关键词匹配游戏名称或属性摘要
-        const matchesKeyword =
-          !this.searchParams.keyword ||
-          good.game_name.includes(this.searchParams.keyword) ||
-          good.attributes_summary.includes(this.searchParams.keyword);
-
-        // 如果有分类信息，也确保分类匹配
-        const matchesCategory =
-          !this.searchParams.categoryName ||
-          good.attributes_summary.includes(this.searchParams.categoryName);
-
-        return matchesKeyword && matchesCategory;
-      });
+    hasActiveFilters() {
+      return (
+        this.searchParams.categoryName ||
+        this.searchParams.keyword ||
+        this.searchParams.brandmark ||
+        this.searchParams.props.length > 0
+      );
     },
+
+    filterGoodsList() {
+      return Array.isArray(this.goodsList) ? this.goodsList.filter((good)=>{//这样就能确保goodsList不是空数据
+        const matchesCategory = !this.searchParams.categoryName ||
+        good.attributes_summary.includes(`ジャンル:${this.searchParams.categoryName}`
+        ) ||
+        good.attributes_summary.includes(
+          `機種:${this.searchParams.categoryName}`
+        ) ||
+        good.attributes_summary.includes(
+          `ブランド:${this.searchParams.categoryName}`
+        );
+        const matchesProps = this.searchParams.props.every((prop) =>{
+          const[attrId,attrValue] = prop.split(":");
+          return good.attributes_summary.includes(`属性${attrId}:${attrValue}`);
+        });
+        return matchesCategory && matchesProps;
+      }):[];
+  
+      // //三級分類导航栏点击跳转搜索 TypeNav.vue
+      // return this.goodsList.filter((good) => {
+      //   const matchesCategory =
+      //     !this.searchParams.categoryName ||
+      //     good.attributes_summary.includes(
+      //       `ジャンル:${this.searchParams.categoryName}`
+      //     ) ||
+      //     good.attributes_summary.includes(
+      //       `機種:${this.searchParams.categoryName}`
+      //     ) ||
+      //     good.attributes_summary.includes(
+      //       `ブランド:${this.searchParams.categoryName}`
+      //     );
+
+      //   console.log("商品属性概要：", good.attributes_summary); // 打印商品的属性概要
+      //   console.log(
+      //     "当前 props:",
+      //     JSON.parse(JSON.stringify(this.searchParams.props))
+      //   ); // 打印搜索属性
+
+      //   const matchesProps = this.searchParams.props.every((prop) => {
+      //     const [attrId, attrValue] = prop.split(":");
+      //     return good.attributes_summary.includes(`属性${attrId}:${attrValue}`);
+      //   });
+
+      //   return matchesCategory && matchesProps;
+      // });
+    },
+
     orderInfo() {
       return this.searchParams.order.split(":");
     },
@@ -320,7 +363,7 @@ export default {
 };
 </script>
   
-  <style lang="less" scoped>
+<style lang="less" scoped>
 .main {
   margin: 10px 0;
 
