@@ -1,28 +1,32 @@
 <template>
   <div class="rank">
     <div class="content">
-      <ul>
+      <ul v-if="items.length">
         <li>
-          <h2><slot name="title"></slot></h2>
+          <h2><slot name="title">{{ title }}</slot></h2>
 
-          <div class="img-item" v-for="item in items" :key="item.gameId">
+          <div class="img-item" v-for="game in items" :key="game.gameId">
             <div class="tab-pic">
-                <img :src="item.url" />
+              <img :src="game.url" />
             </div>
             <div class="tab-info">
               <div class="info-title">
                 <a href="#">
-                  {{ item.gameName }}
+                  {{ game.gameName }}
                 </a>
-                <h1>{{item.brand.brandName}}</h1>
-                <h1>{{item.genre.genreName}}</h1>
+                <h1>{{ game.brand.brandName }}</h1>
+                <h1>{{ game.genre.genreName }}</h1>
               </div>
-              <p class="info-price">定金:¥{{item.price}}</p>
-              <p class="stock">在庫残り{{item.stock}}件</p>
+              <p class="info-price">定金:¥{{ game.price }}</p>
+              <p class="stock">在庫残り{{ game.stock }}件</p>
             </div>
           </div>
         </li>
       </ul>
+      <div v-if="loading" class="loading-spinner">Loading...</div>
+      <div v-if="!loading && !items.length" class="no-data">
+        ゲームが見つかりません
+      </div>
     </div>
   </div>
 </template>
@@ -31,14 +35,22 @@
 export default {
   name: "goodsList",
   props: {
+    title: {
+      type: String,
+      required: true,
+    },
     items: {
       type: Array,
       default: () => [],
     },
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
   created() {
-    console.log("Game list items:", this.items);
-  }
+    console.log(this.SwitchGames); // 打印检查 Nintendo Switch 数据
+  },
 };
 </script>
 

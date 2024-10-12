@@ -1,43 +1,37 @@
 <template>
-    <div>
-        <!-- TypeNav -->
-        <TypeNav />
-        <ListContainer/>
-        <!-- PS4 and PS5 Games -->
-        <GameList :items="ps4ps5Games">
-            <template #title>
-                PS4・PS5
-            </template>
-        </GameList>
-        <!-- Xbox Series X Games -->
-        <GameList :items="xboxGames">
-            <template #title>
-                Xbox
-            </template>
-        </GameList>
-        <!-- Nintendo Switch Games -->
-        <GameList :items="SwitchGames">
-            <template #title>
-                Nitendo Switch
-            </template>
-        </GameList>
+  <div>
+    <TypeNav />
+    <ListContainer />
+    <div v-if="loading">Loading...</div>
+    <div v-else>
+      <GameList :items="ps4ps5Games" title="PS4・PS5" />
+      <GameList :items="xboxGames" title="Xbox" />
+      <GameList :items="SwitchGames" title="Switch" />
     </div>
+    <div v-if="error">{{ error }}</div>
+  </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-
-
+import { mapGetters } from "vuex";
 export default {
-    name:'Home',
-    created(){
-        this.$store.dispatch('home/fetchgoodsList');
-    },
-    computed:{
-        ...mapGetters('home',['ps4ps5Games','xboxGames','SwitchGames']),
-    },
-}
+  name: "Home",
+  computed: {
+    ...mapGetters({
+      ps4ps5Games: "home/ps4ps5Games",
+      xboxGames: "home/xboxGames",
+      SwitchGames: "home/SwitchGames",
+      loading: "home/loading",
+      error: "home/error",
+    }),
+  },
+  created() {
+    this.$store.dispatch("home/fetchGameList", "PS4");
+    this.$store.dispatch("home/fetchGameList", "PS5");
+    this.$store.dispatch("home/fetchGameList", "Xbox Series X");
+    this.$store.dispatch("home/fetchGameList", "Switch");
+  },
+};
 </script>;
 <style>
-
 </style>

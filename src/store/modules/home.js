@@ -1,11 +1,12 @@
-import { reqCategoryList, reqGetBannerList, reqgoodsList } from '@/api/index.js'
+import { reqCategoryList, reqGetBannerList, reqGameList } from '@/api/index.js'
 
 const state = {
   // 初始值为数组或对象
   categoryList: [],
   bannerList: [],
-  goodsList: [],
-  error: null // 新增错误处理
+  gamesList: [],
+  error: null, // 新增错误处理
+  loading: false, // 新增加载状态
 }
 
 const mutations = {
@@ -16,11 +17,13 @@ const mutations = {
   setBannerList(state, bannerList = []) { // 加入默认参数空数组
     state.bannerList = bannerList
   },
-  setgoodsList(state, goodsList = []) {
-    state.goodsList = goodsList;
-    console.log('Stored goods list', state.goodsList); // 查看存储到 Vuex 的数据
+  setGameList(state, newGamesList = []) {
+    state.gamesList = [...state.gamesList, ...newGamesList];  // 合并现有数据和新数据
   },
-  setError(state, error) { // 新增错误处理
+  setLoading(state, isLoading) {
+    state.loading = isLoading;
+  },
+  setError(state, error) {
     state.error = error;
   }
 }
@@ -54,24 +57,23 @@ const actions = {
     } catch (error) {
       console.error('轮播图数据请求失败:', error);
     }
-  }
-  ,
-
-  async fetchgoodsList({ commit }, params = {}) {
+  },
+  async fetchGameList({ commit }, consoleName,params={}) {
+    commit('setLoading', true);
     try {
-      const result = await reqgoodsList(params);
-      console.log('Fetched game list result:', result.data); // 输出完整的响应
-      // 确认 result.data 结构，调整下面代码
-      if (result.code === 200 && result.data && Array.isArray(result.data.goodsList)) {
-        commit('setgoodsList', result.data.goodsList);  // 如果 goodsList 是直接在 data 中
-        console.log('Game list items:', result.data.goodsList);  // 打印获取到的游戏列表
-      } else {
-        commit('setError', '获取游戏列表失败或数据格式无效');
-        console.log('无效的游戏列表格式或响应代码:', result.data);  // 打印无效的响应
+      const result = await reqGameList(consoleName, params);
+      console.log(`获取到 ${consoleName} 平台的数据:`, result);  // 检查返回数据
+      if (result.code === 200) {
+        commit('setGameList', result.data);
+
+      } else{
+        commit('setError',`Error fetching gameList for ${consoleName}`);
       }
     } catch (error) {
+      console.error(`获取${consoleName}平台游戏列表时出错:`, error);
       commit('setError', error.message);
-      console.error('获取游戏列表时出错:', error);
+    }finally{
+      commit('setLoading', false);
     }
   }
 }
@@ -83,14 +85,17 @@ const getters = {
   bannerList(state) {
     return state.bannerList
   },
+  gamesList(state) {
+    return state.gamesList
+  },
   ps4ps5Games(state){
-    return state.goodsList.filter(item => item.console.consoleName === 'PS4'|| item.console.consoleName === 'PS5');
+    return state.gamesList.filter(game => game.console?.consoleName === 'PS4' || game.console?.consoleName === 'PS5');
   },
-  xboxGames(state){
-    return state.goodsList.filter(item => item.console.consoleName === 'Xbox Series X');
+  xboxGames(state) {
+    return state.gamesList.filter(game => game.console?.consoleName === 'Xbox Series X');
   },
-  SwitchGames(state){
-    return state.goodsList.filter(item => item.console.consoleName === 'Nintendo Switch');
+  SwitchGames(state) {
+    return state.gamesList.filter(game => game.console?.consoleName === 'Switch');
   }
 
 }

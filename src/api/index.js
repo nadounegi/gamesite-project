@@ -15,11 +15,13 @@ export function reqCategoryList () {
 export function reqGetBannerList () {
   return requests.get('/lunbo')
 }
-// 游戏商品搜索/获取游戏列表 請求方法:POST /api/goodsList 参数持ち data:params 空き対象を持つ
-export function reqGetSearchInfo (params) {
-  return requests.post('/searchResult', params)
-}
 
-export function reqgoodsList(params) {
-  return requests.get('/goodsList', {params})
+export async function reqGameList(consoleName) {
+  try{
+    const response = await requests.get(`/gameList/console/${consoleName}`);
+    return response;
+  }catch(error){
+    console.error(`Error fetching gameList for ${consoleName}:`,error);
+    throw error;
+  }
 }
