@@ -3,10 +3,10 @@
     <div class="content">
       <h2>{{ title }}</h2>
       <ul v-if="gamesList.length">
-        <li v-for="game in gamesList" :key="game.gameId">
+        <li v-for="game in gamesList" :key="game.gameId" class="layout">
           <div class="img-item">
             <div class="tab-pic">
-              <img :src="game.url" />
+              <img :src="game.url" width="150px" height="200px"/>
             </div>
             <div class="tab-info">
               <div class="info-title">
@@ -22,9 +22,7 @@
           </div>
         </li>
       </ul>
-      <div v-if="!gamesList.length">
-        ゲームが見つかりません
-      </div>
+      <div v-if="!gamesList.length">ゲームが見つかりません</div>
     </div>
   </div>
 </template>
@@ -41,8 +39,8 @@ export default {
       type: Array,
       default: () => [],
       required: true,
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -56,71 +54,59 @@ export default {
     padding: 10px;
 
     ul {
+      display: flex;
+      flex-wrap: wrap;  // 使元素在多行中排列
+      padding: 0;
+      
       li {
-        overflow: hidden;
         list-style: none;
-        line-height: 18px;
-
-        h2 {
-          font-size: 20px;
-          color: #333;
-          margin: 10px 10px;
-        }
+        margin: 10px;  // 设置每个列表项的间距
+        width: calc(25% - 20px);  // 设置每个元素的宽度为25%，减去左右间距
+        box-sizing: border-box;   // 包括内边距和边框在内计算宽度
 
         .img-item {
           border: 1px solid #e1251b;
-          width: 269px;
-          float: left;
-          overflow: hidden;
-          margin: 0 10px 10px;
+          width: 100%;  // 设置图片项宽度为父容器的100%
           background: #fff;
-
+          
           .tab-pic {
-            width: 230px;
+            width: 100%;  // 使图片容器占满整个img-item的宽度
             height: 210px;
             overflow: hidden;
             text-align: center;
             margin: 5px auto 18px;
 
-            a {
-              img {
-                width: 200px;
-                height: 200px;
-              }
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;  // 保证图片保持其纵横比并完整显示
             }
           }
 
           .tab-info {
-            position: relative;
-            bottom: 24px;
             background: #fafafa;
+            padding: 10px;  // 增加内边距
 
             .info-title {
-              height: 68px;
-              line-height: 23px;
               overflow: hidden;
               margin: 0 auto;
-              padding-left: 10px;
+              text-align: center;
+              
               a {
                 color: #333;
                 text-decoration: none;
               }
             }
-            p.stock {
-              position: relative;
-              top: 14px;
-            }
 
             .info-price {
-              position: relative;
-              top: 17px;
               font-size: 20px;
               color: #e1251b;
-              height: 35px;
-              padding-left: 10px;
-              display: block;
-              line-height: 24px;
-              margin: 0px auto 0;
+              text-align: center;
+            }
+
+            p.stock {
+              text-align: center;
+              margin-top: 10px;
             }
           }
         }
@@ -128,4 +114,5 @@ export default {
     }
   }
 }
+
 </style>
