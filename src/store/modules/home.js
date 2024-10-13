@@ -17,6 +17,7 @@ const mutations = {
   setBannerList(state, bannerList = []) { // 加入默认参数空数组
     state.bannerList = bannerList
   },
+
   setGameList(state, newGamesList = []) {
     state.gamesList = [...state.gamesList, ...newGamesList];  // 合并现有数据和新数据
   },
@@ -58,10 +59,10 @@ const actions = {
       console.error('轮播图数据请求失败:', error);
     }
   },
-  async fetchGameList({ commit }, consoleName,params={}) {
+  async fetchGameList({ commit }, consoleName) {
     commit('setLoading', true);
     try {
-      const result = await reqGameList(consoleName, params);
+      const result = await reqGameList(consoleName);
       console.log(`获取到 ${consoleName} 平台的数据:`, result);  // 检查返回数据
       if (result.code === 200) {
         commit('setGameList', result.data);
@@ -88,7 +89,7 @@ const getters = {
   gamesList(state) {
     return state.gamesList
   },
-  ps4ps5Games(state){
+  ps4ps5Games(state) {
     return state.gamesList.filter(game => game.console?.consoleName === 'PS4' || game.console?.consoleName === 'PS5');
   },
   xboxGames(state) {

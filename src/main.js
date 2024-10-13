@@ -9,7 +9,7 @@ import TypeNav from '@/components/TypeNav'
 
 import ListContainer from '@/views/Home/ListContainer'
 
-import goodsList from '@/views/Home/GameList/index.vue'
+import GameList from '@/views/Home/GameList/index.vue'
 // swiper 輪播図 をグローバルに登録する
 import 'swiper/css/swiper.css'
 import * as http from '@/api'
@@ -21,7 +21,7 @@ Vue.use(Vuex);
 Vue.prototype.$api = api
 Vue.component(TypeNav.name, TypeNav)
 Vue.component(ListContainer.name, ListContainer)
-Vue.component(goodsList.name, goodsList)
+Vue.component(GameList.name, GameList)
 
 Vue.config.productionTip = false;
 

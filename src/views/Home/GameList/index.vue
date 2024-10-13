@@ -1,11 +1,10 @@
 <template>
   <div class="rank">
     <div class="content">
-      <ul v-if="items.length">
-        <li>
-          <h2><slot name="title">{{ title }}</slot></h2>
-
-          <div class="img-item" v-for="game in items" :key="game.gameId">
+      <h2>{{ title }}</h2>
+      <ul v-if="gamesList.length">
+        <li v-for="game in gamesList" :key="game.gameId">
+          <div class="img-item">
             <div class="tab-pic">
               <img :src="game.url" />
             </div>
@@ -23,8 +22,7 @@
           </div>
         </li>
       </ul>
-      <div v-if="loading" class="loading-spinner">Loading...</div>
-      <div v-if="!loading && !items.length" class="no-data">
+      <div v-if="!gamesList.length">
         ゲームが見つかりません
       </div>
     </div>
@@ -33,24 +31,18 @@
 
 <script>
 export default {
-  name: "goodsList",
+  name: "GameList",
   props: {
     title: {
       type: String,
       required: true,
     },
-    items: {
+    gamesList: {
       type: Array,
       default: () => [],
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  created() {
-    console.log(this.SwitchGames); // 打印检查 Nintendo Switch 数据
-  },
+      required: true,
+    }
+  }
 };
 </script>
 
