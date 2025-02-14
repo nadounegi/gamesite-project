@@ -11,10 +11,7 @@ const requests = axios.create({
   // ベースURLの設定
   baseURL: 'http://localhost:8080',
   // タイムアウトの設定
-  timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json' // 设置请求头
-  }
+  timeout: 5000
 })
 // インタラプターの設定
 requests.interceptors.request.use((config) => {
@@ -32,7 +29,9 @@ requests.interceptors.response.use((res) => {
   return res.data
 }, (error) => {
   // 失敗的回調函数
-  return Promise.reject(new Error('请求失败'))
+  console.error('Error occurred:', error)
+  alert('An error occurred while processing your request. Please try again later.')
+  return Promise.reject(error)
 })
 
 // エクスポート

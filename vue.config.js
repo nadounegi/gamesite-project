@@ -1,24 +1,23 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: true,
-  lintOnSave: false, // 关闭ESLint
-  publicPath: process.env.NODE_ENV === 'production' ? process.env.VUE_APP_BASE_URL : '/',
+  lintOnSave: false,
+  publicPath: process.env.VUE_APP_BASE_URL || '/',
 
   configureWebpack: {
-    devtool: 'source-map',
+    devtool: 'source-map'
   },
   productionSourceMap: true,
   devServer: {
-    port: 8081,
+    port: 8081, // 前端运行端口
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // 确保这个端口是后端服务运行的端口
-        changeOrigin: true
-        // pathRewrite: { '^/api': '' }, // 将/api前缀去掉 这一行不能要
+        target: 'http://localhost:8080', // 后端服务地址
+        changeOrigin: true // 允许跨域
       }
     },
     client: {
-      webSocketURL: 'ws://localhost:5050/ws',
+      webSocketURL: 'ws://localhost:5050/ws', // WebSocket 配置
       overlay: false
     },
     webSocketServer: false
@@ -28,8 +27,7 @@ module.exports = defineConfig({
       .rule('vue')
       .use('vue-loader')
       .tap(options => {
-        // 添加preserveWhitespace选项
-        options.compilerOptions.preserveWhitespace = true;
+        options.compilerOptions.preserveWhitespace = true
         return options
       })
   }

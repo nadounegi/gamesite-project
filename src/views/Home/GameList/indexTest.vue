@@ -1,53 +1,51 @@
 <template>
   <div class="rank">
     <div class="content">
-      <ul>
-        <li>
-          <h2><slot name="title"></slot></h2>
-          <div class="img-item" v-for="item in items" :key="item.title">
-            <p class="tab-pic">
-              <a :href="item.link">
-                <p>{{ item.image_url }}</p>
-                <img :src="item.img_url" />
-              </a>
-            </p>
+      <h2>{{ title }}</h2>
+      <ul v-if="gamesList.length">
+        <li v-for="game in gamesList" :key="game.gameId" class="layout">
+          <div class="img-item">
+            <div class="tab-pic">
+              <img :src="game.url" width="150px" height="200px"/>
+            </div>
             <div class="tab-info">
               <div class="info-title">
                 <a href="#">
-                  {{ item.game_name }}
+                  {{ game.gameName }}
                 </a>
-                <h1>{{ getGameBrand(item.attributes_summary) }}</h1>
-                <h1>{{ getGameType(item.attributes_summary) }}</h1>
+                <h1>{{ game.brand }}</h1>
+                <h1>{{ game.genre }}</h1>
               </div>
-              <p class="info-price">定金:¥{{ item.price }}</p>
-              <p class="stock">在庫残り{{ item.stock }}</p>
+              <p class="info-price">定金:¥{{ game.price }}</p>
+              <p class="stock">在庫残り{{ game.stock }}件</p>
             </div>
           </div>
         </li>
       </ul>
+      <div v-if="!gamesList.length">ゲームが見つかりません</div>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'goodsList',
+  name: 'GameList',
   props: {
-    items: {
+    title: {
+      type: String,
+      required: true
+    },
+    gamesList: {
       type: Array,
+      default: () => [],
       required: true
     }
   },
-  methods: {
-    getGameType (attributes_summary) {
-      const match = attributes_summary.match(/ジャンル:([^,]+)/)
-      return match ? match[1] : 'ジャンル情報なし'
-    },
-    getGameBrand (attributes_summary) {
-      const match = attributes_summary.match(/ブランド:([^,]+)/)
-      return match ? match[1] : 'ブランド情報なし'
-    }
-
+  created () {
+    const platformNames = ['PS4', 'PS5', 'Xbox Series X', 'Switch']
+    const fetchGameLists = platformNames.map((platform) =>
+      this.$store.dispatch('home/fetchGameList', platform)
+    )
   }
 }
 </script>
@@ -62,72 +60,59 @@ export default {
     padding: 10px;
 
     ul {
-      li {
-        overflow: hidden;
-        list-style: none;
-        line-height: 18px;
+      display: flex;
+      flex-wrap: wrap;  // 使元素在多行中排列
+      padding: 0;
 
-        h2 {
-          font-size: 20px;
-          color: #333;
-          margin: 10px 10px;
-        }
+      li {
+        list-style: none;
+        margin: 10px;  // 设置每个列表项的间距
+        width: calc(25% - 20px);  // 设置每个元素的宽度为25%，减去左右间距
+        box-sizing: border-box;   // 包括内边距和边框在内计算宽度
 
         .img-item {
           border: 1px solid #e1251b;
-          width: 269px;
-          float: left;
-          overflow: hidden;
-          margin: 0 10px 10px;
+          width: 100%;  // 设置图片项宽度为父容器的100%
           background: #fff;
 
           .tab-pic {
-            width: 230px;
+            width: 100%;  // 使图片容器占满整个img-item的宽度
             height: 210px;
             overflow: hidden;
             text-align: center;
             margin: 5px auto 18px;
 
-            a {
-              img {
-                width: 200px;
-                height: 200px;
-              }
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;  // 保证图片保持其纵横比并完整显示
             }
           }
 
           .tab-info {
-            position: relative;
-            bottom: 24px;
             background: #fafafa;
+            padding: 10px;  // 增加内边距
 
             .info-title {
-              height: 68px;
-              line-height: 23px;
               overflow: hidden;
               margin: 0 auto;
-              padding-left: 10px;
+              text-align: center;
+
               a {
                 color: #333;
                 text-decoration: none;
               }
             }
-            p.stock {
-              position: relative;
-              top: 14px;
-            }
 
             .info-price {
-              position: relative;
-              top: 17px;
               font-size: 20px;
               color: #e1251b;
-              height: 35px;
-              padding-left: 10px;
-              display: block;
-              line-height: 24px;
-              margin: 0px auto 0;
+              text-align: center;
+            }
 
+            p.stock {
+              text-align: center;
+              margin-top: 10px;
             }
           }
         }
@@ -135,4 +120,5 @@ export default {
     }
   }
 }
+
 </style>

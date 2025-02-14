@@ -16,12 +16,45 @@ export function reqGetBannerList () {
   return requests.get('/lunbo')
 }
 
-export async function reqGameList(consoleName) {
-  try{
-    const response = await requests.get(`/gameList/console/${consoleName}`);
-    return response;
-  }catch(error){
-    console.error(`Error fetching gameList for ${consoleName}:`,error);
-    throw error;
-  }
+export function reqGameListPage (size = 10, offset = 0) {
+  return requests.get('/gameList', {
+    params: { size, offset } // MySQL の `LIMIT` 仕様に合わせる
+  })
+}
+
+export async function reqGenreList () {
+  return requests.get('/genres/all')
+}
+export async function reqAddGenre (genreName) {
+  return requests.post('/genres', null, { params: { genreName } })
+}
+
+export async function reqGameList () {
+  return requests.get('/gameList')
+}
+
+export async function reqAddGame (gameData) {
+  return requests.post('/games', gameData, {
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+export function reqUploadImage (formData) {
+  return requests.post('/upload', formData)
+}
+
+// 検索機能 キーワード検索ナヴィゲーションバーの検索機能
+export async function reqGetSearchInfo (searchParams) {
+  return requests({
+    url: '/searchResult',
+    method: 'post',
+    data: searchParams,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+export function registerUser (userInfo) {
+  return requests.post('/user/register', userInfo)
 }

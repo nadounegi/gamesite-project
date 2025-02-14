@@ -28,25 +28,26 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
-import Swiper from "swiper";
-import "swiper/css/swiper.min.css";
+import { mapState } from 'vuex'
+import Swiper from 'swiper'
+import 'swiper/css/swiper.min.css'
 export default {
-  name: "ListContainer",
+  name: 'ListContainer',
   components: {
-    Swiper,
+    // eslint-disable-next-line vue/no-unused-components
+    Swiper
   },
-  created() {
-    this.$store.dispatch("home/fetchBannerList").then(()=>{
+  created () {
+    this.$store.dispatch('home/fetchBannerList').then(() => {
     }).catch(error => {
-      console.error("获取轮播图数据失败", error);
+      console.error('获取轮播图数据失败', error)
     })
     // this.$store.dispatch("home/fetchBannerList");
     // console.log("bannerList", this.bannerList);
   },
   computed: {
     ...mapState({
-      bannerList: (state) => state.home.bannerList,
+      bannerList: (state) => state.home.bannerList
     })
     // ...mapGetters({
     //   bannerList: "home/bannerList",
@@ -104,35 +105,35 @@ export default {
   //     })
   //   }
   // },
-  mounted() {
-    this.$store.dispatch("home/fetchBannerList").then(() => {
-      this.$nextTick(() => {
-        const mySwiper = new Swiper(".swiper-container", {
-          direction: "horizontal", //设置轮播图方向 水平方向
-          loop: true, //开启循环模式
+  mounted () {
+    this.$store.dispatch('home/fetchBannerList').then(() => {
+      this.$nextTick(() => { // 页面渲染完成后执行
+        const mySwiper = new Swiper('.swiper-container', {
+          direction: 'horizontal', // 设置轮播图方向 水平方向
+          loop: true, // 开启循环模式
           pagination: {
-            el: ".swiper-pagination", //设置分页器
-            clickable: true, //点击分页器切换轮播
+            el: '.swiper-pagination', // 设置分页器
+            clickable: true // 点击分页器切换轮播
           },
           autoplay: {
             delay: 1500,
-            disableOnInteraction: false, //用户操作swiper之后是否禁止autoplay
+            disableOnInteraction: false // 用户操作swiper之后是否禁止autoplay
           },
           navigation: {
-            nextEl: ".swiper-button-next", //前进按钮
-            prevEl: ".swiper-button-prev", //后退按钮
-          },
-        });
-        mySwiper.el.onmouseover = function(){//鼠标进入停止轮播
-          mySwiper.autoplay.stop();          
+            nextEl: '.swiper-button-next', // 前进按钮
+            prevEl: '.swiper-button-prev' // 后退按钮
+          }
+        })
+        mySwiper.el.onmouseover = function () { // 鼠标进入停止轮播
+          mySwiper.autoplay.stop()
         }
-        mySwiper.el.onmouseout = function(){//鼠标离开开始轮播
+        mySwiper.el.onmouseout = function () { // 鼠标离开开始轮播
           mySwiper.autoplay.start()
         }
-      });
-    });
-  },
-};
+      })
+    })
+  }
+}
 </script>
 
 <style lang="less" scoped>

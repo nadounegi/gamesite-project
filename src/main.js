@@ -12,25 +12,30 @@ import ListContainer from '@/views/Home/ListContainer'
 import GameList from '@/views/Home/GameList/index.vue'
 // swiper 輪播図 をグローバルに登録する
 import 'swiper/css/swiper.css'
-import * as http from '@/api'
+
+// Element UI
+import ElementUI from 'element-ui'
+
+import http from '@/api'
 
 import process from 'process'
-Vue.use(Vuex);
-
+Vue.use(ElementUI, { size: 'mini' })
+import('element-ui/lib/theme-chalk/index.css')
+Vue.use(Vuex)
 
 Vue.prototype.$api = api
 Vue.component(TypeNav.name, TypeNav)
 Vue.component(ListContainer.name, ListContainer)
 Vue.component(GameList.name, GameList)
 
-Vue.config.productionTip = false;
+Vue.config.productionTip = false
 
 window.process = process
-console.log(process.env.NODE_ENV);
+console.log(process.env.NODE_ENV)
 
 if (process.env.NODE_ENV === 'production') {
-  Vue.config.devtools = true;
-  Vue.config.debug = true;
+  Vue.config.devtools = true
+  Vue.config.debug = true
 }
 
 new Vue({

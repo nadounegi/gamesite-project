@@ -13,7 +13,7 @@
             <a href="#">注文履歴</a>
             <a href="#">マイカート</a>
             <a href="#">マイページ</a>
-            <a href="#">店舗管理</a>
+            <a href="#/management">店舗管理</a>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@
 <script>
 import logo from '@/components/Header/images/logo.png'
 export default {
-  name: 'Header',
+  name: 'HeaderInfo',
   data () {
     return {
       logo,

@@ -76,78 +76,77 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
-import throttle from "../../../node_modules/lodash/throttle.js";
+import { mapState } from 'vuex'
+import throttle from '../../../node_modules/lodash/throttle.js'
 export default {
-  name: "TypeNav",
-  data() {
+  name: 'TypeNav',
+  data () {
     return {
       // マウスがどのカテゴリーに乗せるかを判断する
       currentIndex: -1,
-      show: true,
-    };
+      show: true
+    }
   },
 
   methods: {
     enterHandler: throttle(function (index) {
-      this.currentIndex = index;
+      this.currentIndex = index
     }, 20),
-    leaveHandler() {
-      this.currentIndex = -1;
-      if (this.$route.path != "/home") {
+    leaveHandler () {
+      this.currentIndex = -1
+      if (this.$route.path != '/home') {
         // ホームページ以外のページに行くと、カテゴリーが消える
-        this.show = false;
+        this.show = false
       }
     },
-    changeShow() {
-      if (this.$route.path != "/home") {
-        this.show = true;
+    changeShow () {
+      if (this.$route.path != '/home') {
+        this.show = true
       }
     },
-    goSearch(event) {
+    goSearch (event) {
       const { categoryname, category1id, category2id, category3id } =
-        event.target.dataset;
-      const query = {};
+        event.target.dataset
+      const query = {}
       if (category3id) {
-        query.category3id = category3id; // 优先传递三级分类
+        query.category3id = category3id // 优先传递三级分类
       } else if (category2id) {
-        query.category2id = category2id; // 如果没有三级分类，传递二级分类
+        query.category2id = category2id // 如果没有三级分类，传递二级分类
       } else if (category1id) {
-        query.category1id = category1id; // 如果没有二级分类，传递一级分类
+        query.category1id = category1id // 如果没有二级分类，传递一级分类
       }
 
       if (categoryname) {
-        query.categoryName = categoryname; // 分类名称
+        query.categoryName = categoryname // 分类名称
       }
-      console.log("查询参数", query);
+      console.log('查询参数', query)
       this.$router.push({
-        name: "search",
+        name: 'search',
         query,
-        params: this.$route.params,
-      });
-    },
-  },
-  mounted() {
-    if (this.$route.path != "/home") {
-      this.show = false;
+        params: this.$route.params
+      })
     }
   },
-  created() {
+  mounted () {
+    if (this.$route.path != '/home') {
+      this.show = false
+    }
+  },
+  created () {
     // 这个一定要添，否则不出数据
     this.$store.dispatch('home/fetchCategoryList').then(() => {
-    console.log("Category List:", this.categoryList); // 这里可以检查是否成功获取到数据
-  }).catch(error => {
-    console.error("Error fetching category list:", error);
-  });
-
+      console.log('Category List:', this.categoryList) // 这里可以检查是否成功获取到数据
+    }).catch(error => {
+      console.error('Error fetching category list:', error)
+    })
   },
   computed: {
     ...mapState({
       categoryList: state => state.home.categoryList,
-      error: state => state.home.error, // 用来获取错误信息
-    }),
-  },
-};
+      error: state => state.home.error // 用来获取错误信息
+    })
+  }
+}
 </script>
 
 <style lang="less" scoped>

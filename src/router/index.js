@@ -2,10 +2,16 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 import Home from '@/views/Home'
+import GameList from '@/views/Home/GameList'
 import Search from '@/views/Search'
 import Login from '@/views/Login'
 import Register from '@/views/Register'
-
+import Management from '@/views/Management'
+import HomePage from '@/views/Management/homePage'
+import stockManagement from '@/views/Management/stockManagement'
+import Admin from '@/views/Management/Admin'
+import PlatformManagement from '@/views/Management/PlatformManagement'
+import genreManagement from '@/views/Management/genreManagement'
 Vue.use(Router)
 
 const originPush = Router.prototype.push
@@ -16,7 +22,7 @@ Router.prototype.push = function (location, resolve, reject) {
     // call和apply的区別在於call是一個一個傳參數用逗号隔开，apply是一個數組
     originPush.call(this, location, resolve, reject)
   } else {
-    originPush.call(this, location, () => {}, () => {})
+    originPush.call(this, location, () => { }, () => { })
   }
 }
 
@@ -24,32 +30,67 @@ Router.prototype.replace = function (location, resolve, reject) {
   if (resolve && reject) {
     originReplace.call(this, location, resolve, reject)
   } else {
-    originReplace.call(this, location, () => {}, () => {})
+    originReplace.call(this, location, () => { }, () => { })
   }
 }
 export default new Router({
-  mode: 'history',
+  mode: 'hash',
   base: process.env.BASE_URL,
   routes: [
     {
       path: '/home',
       component: Home,
       name: 'home',
-      meta: { show: true }
+      meta: { showHeader: true },
+      children: [
+        {
+          path: 'games',
+          component: GameList
+        }
+      ]
     },
     {
       path: '/search/:keyword?',
       component: Search,
       name: 'search',
-      meta: { show: true }
+      meta: { showHeader: true }
     },
     {
       path: '/login',
-      component: Login
+      component: Login,
+      meta: { showHeader: false }
     },
     {
       path: '/register',
-      component: Register
+      component: Register,
+      meta: { showHeader: false }
+    },
+    {
+      path: '/management',
+      name: 'ManagementPage',
+      component: Management,
+      children: [
+        {
+          path: 'homePage',
+          component: HomePage // 首页
+        },
+        {
+          path: 'stock',
+          component: stockManagement // 在庫管理
+        },
+        {
+          path: 'platform',
+          component: PlatformManagement // 開発元管理
+        },
+        {
+          path: 'genre',
+          component: genreManagement // ゲーム類型管理
+        },
+        {
+          path: 'admin',
+          component: Admin // 管理者権限
+        }
+      ]
     },
     {
       path: '/',
