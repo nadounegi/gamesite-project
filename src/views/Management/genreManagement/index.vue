@@ -23,32 +23,127 @@
         label="ゲーム類型"
         width="180">
       </el-table-column>
+      <el-table-column label="操作" width="420" header-align="center" align="center">
+          <template slot-scope="scope">
+            <el-button
+              size="mini"
+              type="primary"
+              plain
+              @click="updateGenre(scope.row)"
+            >编辑</el-button>
+
+            <el-button
+              size="mini"
+              type="danger"
+              plain
+              @click="deleteGenre(scope.row.genreId)"
+            >删除</el-button>
+          </template>
+        </el-table-column>
     </el-table>
 </div>
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
+import { findAll, addGenre, deleteGenre, updateGenre } from '@/api/index.js'
 export default {
-  name: 'genreManagement',
-  computed: {
-    ...mapState('game', ['genreList'])
-  },
   data () {
     return {
       formInline: {
         genreName: ''
-      }
+      },
+      genre: {
+        genreName: ''
+      },
+      genreList: []
     }
   },
-  methods: {
-    onAdd () {
-      console.log('submit!')
-    },
-    ...mapActions('game', ['fetchGenreList'])
-  },
   mounted () {
-    this.fetchGenreList()
+    this.init()
+  },
+  methods: {
+    // ゲーム類型追加
+    onAdd () {
+      if (!this.formInline.genreName.trim()) {
+        this.$message.warning('ゲーム類型を入力してください')
+        return
+      }
+
+      this.genre.genreName = this.formInline.genreName // 値を代入
+
+      addGenre(this.genre).then(({ data }) => {
+        if (data.code === 200) {
+          this.$message.success('追加成功')
+          this.formInline.genreName = ''
+          this.init()
+        } else {
+          this.$message.error(data.msg)
+        }
+      }).catch(error => {
+        this.$message.error('エラーが発生しました:' + error.$message)
+      })
+    },
+    // ゲーム類型リスト表示
+    init () {
+      findAll().then((result) => {
+        console.log(result)
+        if (result.data.code === 200) {
+          this.genreList = result.data.data
+        }
+      })
+    },
+    // ゲーム類型削除
+    deleteGenre (genreId) {
+      this.$confirm('削除するの？', '提示', {
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteGenre(genreId).then((result) => {
+          if (result.data.code === 1) {
+            this.$message({
+              message: '削除成功',
+              type: 'success'
+            })
+          } else {
+            this.$message.error(result.data.msg)
+          }
+          // ゲーム類型表示
+          this.init()
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '削除取消ました'
+        })
+      })
+    },
+    updateGenre (genre) {
+      this.$prompt('新しいゲーム類型名を入力してください', '編集', {
+        confirmButtonText: '保存',
+        cancelButtonText: 'キャンセル',
+        inputValue: genre.genreName
+      }).then(({ value }) => {
+        if (!value.trim()) {
+          this.$message.warning('ゲーム類型名を空にできません')
+          return
+        }
+
+        const updatedGenre = { ...genre, genreName: value }
+        updateGenre(updatedGenre).then(({ data }) => {
+          if (data.code === 1) {
+            this.$message.success('編集成功')
+            this.init()
+          } else {
+            this.$message.error(data.msg)
+          }
+        }).catch(error => {
+          this.$message.error('エラーが発生しました:' + error.message)
+        })
+      }).catch(() => {
+        this.$message.info('編集をキャンセルしました')
+      })
+    }
   }
 }
 </script>

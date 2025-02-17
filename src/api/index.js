@@ -1,48 +1,51 @@
-// API接続口の統合管理
-
 import requests from './request.js'
-// //获取导航栏分类列表 /game/getCategoryList
-// export const reqCategoryList =()=>{
-//     // リクエストを送信 返信結果はPromiseオブジェクト
-//    return requests({url:'/game/getCategoryList',method:'GET'});
-// }
-// 获取导航栏分类列表 /game/getCategoryList シンプルな書き方
 
-export function reqCategoryList () {
-  return requests.get('/getCategoryList')
-}
-// 获取轮播图 /game/getSwiper
-export function reqGetBannerList () {
-  return requests.get('/lunbo')
-}
-
-export function reqGameListPage (size = 10, offset = 0) {
-  return requests.get('/gameList', {
-    params: { size, offset } // MySQL の `LIMIT` 仕様に合わせる
+export function reqGameByCase ({ page = 1, size = 10 } = {}) {
+  return requests({
+    url: '/gamesList',
+    method: 'get',
+    params: { page, size }
   })
 }
 
-export async function reqGenreList () {
-  return requests.get('/genres/all')
-}
-export async function reqAddGenre (genreName) {
-  return requests.post('/genres', null, { params: { genreName } })
-}
-
-export async function reqGameList () {
-  return requests.get('/gameList')
-}
-
-export async function reqAddGame (gameData) {
-  return requests.post('/games', gameData, {
+export function reqAddGame (gameData) {
+  return requests({
+    url: '/games',
+    method: 'post',
+    data: gameData,
     headers: { 'Content-Type': 'application/json' }
   })
 }
 
 export function reqUploadImage (formData) {
-  return requests.post('/upload', formData)
+  return requests({
+    url: '/upload',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 }
 
+export function reqPlatformList () {
+  return requests({
+    url: '/platforms',
+    method: 'get'
+  })
+}
+
+export function reqGenreList () {
+  return requests({
+    url: '/genres',
+    method: 'get'
+  })
+}
+
+export function reqBrandList () {
+  return requests({
+    url: '/brands',
+    method: 'get'
+  })
+}
 // 検索機能 キーワード検索ナヴィゲーションバーの検索機能
 export async function reqGetSearchInfo (searchParams) {
   return requests({
@@ -54,7 +57,49 @@ export async function reqGetSearchInfo (searchParams) {
     }
   })
 }
-
 export function registerUser (userInfo) {
   return requests.post('/user/register', userInfo)
+}
+// 获取导航栏分类列表 /game/getCategoryList シンプルな書き方
+export function reqCategoryList () {
+  return requests.get('/getCategoryList')
+}
+
+// 获取轮播图 /game/getSwiper
+export function reqGetBannerList () {
+  return requests.get('/lunbo')
+}
+
+export async function reqGameList () {
+  return requests.get('/gameList')
+}
+
+export function findAll () {
+  return requests({
+    url: '/genres',
+    method: 'get'
+  })
+}
+export function addGenre (genre) {
+  return requests({
+    url: '/genres',
+    method: 'post',
+    data: genre
+  })
+}
+export function deleteGenre (genreId) {
+  return requests({
+    url: '/genres/' + genreId,
+    method: 'delete'
+  })
+}
+export function updateGenre (genre) {
+  return requests({
+    url: '/genres',
+    method: 'put',
+    params: {
+      genreId: genre.genreId,
+      genreName: genre.genreName
+    }
+  })
 }

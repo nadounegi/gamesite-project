@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="container">
     <div class="form-bar">
@@ -5,7 +6,7 @@
       <el-form ref="form" :model="sizeForm" label-width="127px" size="mini">
         <el-form-item label="商品名">
           <el-input
-            v-model="sizeForm.name"
+            v-model="sizeForm.gameName"
             placeholder="ゲーム名を入力してください"
             style="width: 50%; height: 40px"
           ></el-input>
@@ -13,7 +14,7 @@
 
         <el-form-item label="プラットフォーム" style="width: 127px">
           <el-select
-            v-model="sizeForm.platformType"
+            v-model="sizeForm.platformId"
             placeholder="プラットフォームを選択してください"
             style="
               width: 100%;
@@ -22,18 +23,40 @@
               height: 40px;
             "
           >
-            <el-option label="PS4" value="ps4"></el-option>
-            <el-option label="PS5" value="ps5"></el-option>
+            <el-option
+            v-for="platform in platformList"
+            :key="platform.platformId"
+             :label="platform.platformType"
+             :value="platform.platformId">
+            </el-option>
           </el-select>
         </el-form-item>
 
         <el-form-item label="ジャンル">
           <el-select
-            v-model="sizeForm.genreName"
+            v-model="sizeForm.genreId"
             placeholder="ゲーム類型を選択してください"
             style="width: 30%; height: 40px"
           >
-            <el-option label="アクション" value="action"></el-option>
+            <el-option
+            v-for="genre in genreList"
+            :key="genre.genreId"
+            :label="genre.genreName"
+            :value="genre.genreId">
+          </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="開発元">
+          <el-select
+            v-model="sizeForm.brandId"
+            placeholder="開発元を選択してください"
+            style="width: 30%; height: 40px"
+          >
+            <el-option
+            v-for="brand in brandList"
+            :key="brand.brandId"
+            :label="brand.brandName"
+            :value="brand.brandId"></el-option>
           </el-select>
         </el-form-item>
         <!-- ボタン部分 -->
@@ -52,15 +75,33 @@
       <el-input v-model="dialogForm.gameName"></el-input>
     </el-form-item>
     <el-form-item label="プラットフォーム" label-width="150px">
-      <el-select v-model="dialogForm.platform">
-        <el-option label="PS4" value="ps4"></el-option>
-        <el-option label="PS5" value="ps5"></el-option>
+      <el-select v-model="dialogForm.platformId">
+        <el-option
+        v-for="platform in platformList"
+        :key="platform.platformId"
+        :label="platform.platformType"
+        :value="platform.platformId">
+      </el-option>
       </el-select>
     </el-form-item>
     <el-form-item label="ジャンル">
-      <el-select v-model="dialogForm.genre">
-        <el-option label="アクション" value="action"></el-option>
-        <el-option label="RPG" value="rpg"></el-option>
+      <el-select v-model="dialogForm.genreId">
+        <el-option
+        v-for="genre in genreList"
+        :key="genre.genreId"
+        :label="genre.genreName"
+        :value="genre.genreId">
+      </el-option>
+      </el-select>
+    </el-form-item>
+    <el-form-item label="開発元" label-width="150px">
+      <el-select v-model="dialogForm.brandId">
+        <el-option
+        v-for="brand in brandList"
+        :key="brand.brandId"
+        :label="brand.brandName"
+        :value="brand.brandId">
+      </el-option>
       </el-select>
     </el-form-item>
     <el-form-item label="価格">
@@ -72,11 +113,10 @@
     <el-form-item label="ゲーム紹介">
       <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 10}" v-model="dialogForm.description"></el-input>
     </el-form-item>
+
        <!-- 画像アップロード -->
-       <el-form-item label="ゲーム画像">
-          <input type="file" @change="handleFileUpload" accept="image/*">
-          <img v-if="imagePreview" :src="imagePreview" alt="画像プレビュー" style="max-width: 100px; margin-top: 10px;">
-        </el-form-item>
+   <input type="file" @change="handleFileUpload" accept="image/*">
+   <img v-if="dialogForm.url" :src="dialogForm.url" alt="画像プレビュー" style="max-width: 100px; margin-top: 10px;">
   </el-form>
   <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">キャンセル</el-button>
@@ -85,9 +125,7 @@
 </el-dialog>
     <div class="table-contents">
       <el-table
-      v-if="safeGameList && safeGameList.length > 0"
-      v-loading="loading"
-      :data="safeGameList"
+      :data="tableData"
       border
       :span-method="mergeCells"
       style="width: 100%">
@@ -103,20 +141,25 @@
         </el-table-column>
         <el-table-column prop="gameName" label="ゲーム名" width="120">
         </el-table-column>
-        <el-table-column prop="platformType" label="プラットフォーム" width="80">
+        <el-table-column prop="platformId" label="プラットフォーム" width="80">
         <template slot-scope="scope">
-        <span>{{ scope.row.platformType }}</span>
+        <span>{{ getPlatformName(scope.row.platformId) }}</span>
         </template>
         </el-table-column>
-        <el-table-column prop="genreName" label="ゲーム類型" width="120">
+        <el-table-column prop="genreId" label="ゲーム類型" width="120">
         <template slot-scope="scope">
-        <span>{{ scope.row.genreName }}</span>
+        <span>{{ getGenreName(scope.row.genreId) }}</span>
+        </template>
+        </el-table-column>
+        <el-table-column prop="brandId" label="開発元" width="120">
+        <template slot-scope="scope">
+        <span>{{ getBrandName(scope.row.brandId) }}</span>
         </template>
         </el-table-column>
         <el-table-column prop="stock" label="在庫数" width="80">
         </el-table-column>
         <el-table-column prop="price" label="価格" width="80"> </el-table-column>
-          <!-- 游戏介绍の二列を結合 -->
+          <!-- 游戏介绍 -->
         <el-table-column prop="description" label="ゲーム紹介" width="200">
           <span>{{ scope.row.description }}</span>
         </el-table-column>
@@ -144,150 +187,156 @@
 </template>
 
 <script>
-import { reqAddGame, reqUploadImage } from '@/api'
-import { mapActions, mapState } from 'vuex'
+import { reqAddGame, reqUploadImage, reqGameByCase, reqPlatformList, reqBrandList, reqGenreList } from '@/api/index.js'
+
 export default {
-  name: 'stockManagement',
-  computed: {
-    ...mapState('game', ['gameList']),
-    safeGameList () {
-      return Array.isArray(this.gameList) ? this.gameList : []
-    }
-  },
-  watch: {
-    gameList (newList) {
-      console.log('gameList 更新:', newList)
-    }
-  },
   data () {
     return {
-      gameList: [],
+      platformList: [],
+      genreList: [],
+      brandList: [],
+      tableData: [],
       dialogVisible: false, // 控制对话框显示
       sizeForm: {
-        name: '',
-        platformType: '',
-        genreName: ''
+        gameName: '',
+        platformId: '',
+        genreId: '',
+        brandId: ''
       },
       dialogForm: {
         gameName: '',
-        platformType: '',
-        genreName: '',
+        platformId: '',
+        genreId: '',
+        brandId: '',
+        price: '',
+        stock: '',
+        description: '',
+        url: null
+      },
+      uploadUrl: '/upload',
+      imageUrl: ''
+    }
+  },
+  methods: {
+    getPlatformName (platformId) {
+      const platform = this.platformList.find(p => p.platformId === platformId)
+      return platform ? platform.platformType : '不明'
+    },
+    getGenreName (genreId) {
+      const genre = this.genreList.find(g => g.genreId === genreId)
+      return genre ? genre.genreName : '不明'
+    },
+    getBrandName (brandId) {
+      const brand = this.brandList.find(b => b.brandId === brandId)
+      return brand ? brand.brandName : '不明'
+    },
+    async fetchGameList () {
+      try {
+        const response = await reqGameByCase({ page: 1, size: 10 })
+        if (response.code === 200) {
+          this.tableData = response.data?.data || []
+        } else {
+          this.$message.error('ゲームリストの取得に失敗しました')
+        }
+      } catch (error) {
+        console.error('ゲームリスト取得エラー:', error)
+        this.$message.error('エラーが発生しました:' + error.message)
+      }
+    },
+    async fetchPlatformList () {
+      try {
+        const response = await reqPlatformList()
+        if (response.code === 200) {
+          this.platformList = response.data?.data || []
+        } else {
+          this.$message.error('プラットフォームリストの取得に失敗しました')
+        }
+      } catch (error) {
+        this.$message.error('エラーが発生しました:' + error.message)
+      }
+    },
+    async fetchGenreList () {
+      try {
+        const response = await reqGenreList()
+        if (response.code === 200) {
+          this.genreList = response.data?.data || []
+        } else {
+          this.$message.error('ジャンルリストの取得に失敗しました')
+        }
+      } catch (error) {
+        this.$message.error('エラーが発生しました：' + error.message)
+      }
+    },
+    async fetchBrandList () {
+      try {
+        const response = await reqBrandList()
+        if (response.code === 200) {
+          this.brandList = response.data?.data || []
+        } else {
+          this.$message.error('開発元リストの取得に失敗しました')
+        }
+      } catch (error) {
+        this.$message.error('エラーが発生しました:' + error.message)
+      }
+    },
+    openDialog () {
+      this.dialogForm = {
+        gameName: '',
+        platformId: '',
+        genreId: '',
+        brandId: '',
         price: '',
         stock: '',
         description: '',
         url: null
       }
-
-    }
-  },
-  methods: {
-    // **打开对话框**
-    openDialog () {
       this.dialogVisible = true
     },
     async addGame () {
-      if (!this.dialogForm.gameName || !this.dialogForm.platformType || !this.dialogForm.genreName || !this.dialogForm.price || this.dialogForm.stock || this.dialogForm.description || this.dialogForm.url) {
-        alert('すべての項目を入力してください')
+      if (!this.dialogForm.gameName || !this.dialogForm.platformId || !this.dialogForm.genreId || !this.dialogForm.brandId || !this.dialogForm.price || !this.dialogForm.stock || !this.dialogForm.description) {
+        this.$message.error('すべての項目を入力してください')
         return
       }
-
-      let imageUrl = ''
-      if (this.dialogForm.file) {
-        const imageForm = new FormData()
-        imageForm.append('file', this.dialogForm.file)
-
-        try {
-          const uploadResponse = await reqUploadImage(imageForm) // 写真アップロード
-          if (uploadResponse.code === 1) {
-            // eslint-disable-next-line no-const-assign
-            imageUrl = uploadResponse.imageUrl // backend return 写真URL
-          } else {
-            this.$message.error('画像のアップロードに失敗しました')
-            return
-          }
-        } catch (error) {
-          this.$message.error('画像のアップロード失敗')
-          return
+      try {
+        const response = await reqAddGame(this.dialogForm)
+        if (response.code === 200) {
+          this.$message.success('ゲームが追加されました')
+          this.dialogVisible = false
+          await this.fetchGameList()
+        } else {
+          this.$message.error(response.message || 'ゲーム追加に失敗しました')
         }
+      } catch (error) {
+        this.$message.error('エラーが発生しました' + error.message)
       }
-
-      const formData = {
-        gameName: this.dialogForm.gameName,
-        description: this.dialogForm.description,
-        price: this.dialogForm.price,
-        stock: this.dialogForm.stock,
-        platformId: this.dialogForm.platformType,
-        genreId: this.dialogForm.genreName,
-        brandId: 1,
-        url: imageUrl // 存储上传后的图片 URL
-      }
-
-      // APIへリクエスト送信
-      reqAddGame(formData)
-        .then(response => {
-          if (response.code === 200) {
-            this.$message.success(response.message)
-          }
-        })
-      // 清空表单数据并关闭对话框
-      this.dialogForm = { gameName: '', platformType: '', genreName: '' }
-      this.dialogVisible = false
-
-      this.$message.success('ゲームが追加されました！')
-    },
-    stockAdd () {
-      console.log('在庫管理')
-    },
-    handleClick (row) {
-      console.log(row)
-    },
-    handleRemove (file, fileList) {
-      console.log(file, fileList)
-    },
-    handlePreview (file) {
-      console.log(file)
-    },
-    handleSizeChange (size) {
-      this.$store.commit('game/setPageSize', size)
-      this.fetchGameList()
-    },
-    handleCurrentChange (page) {
-      if (page < 1) page = 1
-      this.$store.commit('game/setCurrentPage', page)
-      this.fetchGameList()
     },
     async handleFileUpload (event) {
       const file = event.target.files[0]
       if (!file) return
 
-      this.dialogForm.file = file
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        this.imagePreview = reader.result
-      }
-    },
-    ...mapActions('game', ['fetchGameList']),
-    mergeCells ({ row, column, rowIndex, columnIndex }) {
-      console.log('mergeCells params:', { row, column, rowIndex, columnIndex })
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // 如果 row 或 column 未定义，返回 [1, 1]
-      if (!row || !column) {
-        console.warn('Row or column is undefined in mergeCells:', { row, column })
-        return [1, 1]
+      try {
+        const response = await reqUploadImage(formData)
+        if (response.code === 200) {
+          this.dialogForm.url = response.imageUrl
+          this.$message.success('画像がアップロードされました')
+        } else {
+          this.$message.error('画像のアップロードに失敗しました')
+        }
+      } catch (error) {
+        this.$message.error('エラーが発生しました' + error.message)
       }
-
-      if (columnIndex === 6) {
-        return [1, 2] // 合并第6列
-      } else if (columnIndex === 7) {
-        return [0, 0] // 隐藏第7列
-      }
-      return [1, 1]
     }
-
   },
-  mounted () {
-    this.fetchGameList()
+  async mounted () {
+    await Promise.all([
+      this.fetchPlatformList(),
+      this.fetchBrandList(),
+      this.fetchGenreList(),
+      this.fetchGameList()
+    ])
   }
 }
 </script>

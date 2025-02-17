@@ -1,4 +1,5 @@
 import { reqGetSearchInfo } from '@/api'
+
 const state = {
 
   searchResults: {} // 検索結果
@@ -26,7 +27,7 @@ const actions = {
   }
 }
 
-// 計算属性　プロジェクトにおいて、リストを簡潔に表示するために使用される
+// 計算属性プロジェクトにおいて、リストを簡潔に表示するために使用される
 const getters = {
   // 返回搜索商品列表
   goodsList (state) {

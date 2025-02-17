@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="rank">
     <div class="content">
@@ -31,34 +32,32 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
+import { reqGameList } from '@/api/index.js'
 
 export default {
-  name: 'GameList',
-  created () {
-    this.fetchAllGames()
-  },
-  computed: {
-    ...mapState('game', ['allGamesList', 'loading', 'error']) // ✅ 直接使用 mapState
-
+  data () {
+    return {
+      allGamesList: []
+    }
   },
   methods: {
-    ...mapActions('game', ['fetchAllGames'])
+    async fetchGameList () {
+      try {
+        const response = await reqGameList()
+        if (response.code === 200 && Array.isArray(response.data)) {
+          this.allGamesList = response.data
+        } else {
+          this.$message.error('ゲームリストの取得に失敗しました')
+        }
+      } catch (error) {
+        console.error('ゲームリスト取得エラー:', error)
+        this.$message.error('エラーが発生しました:' + error.message)
+      }
+    }
+  },
+  mounted () {
+    this.fetchGameList()
   }
-  // computed: {
-  //   gamesList () {
-  //     return this.$store.getters['game/allGamesList']
-  //   },
-  //   loading () {
-  //     return this.$store.getters['game/isLoading']
-  //   },
-  //   error () {
-  //     return this.$store.getters['game/error']
-  //   }
-  // },
-  // created () {
-  //   this.$store.dispatch('game/fetchAllGames')
-  // }
 }
 </script>
 

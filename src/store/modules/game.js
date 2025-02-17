@@ -13,8 +13,7 @@ const state = {
 
 const mutations = {
   setGameList (state, { data = [], total = 0 }) {
-    console.log('更新gameList:', data)
-    console.log('更新total:', total)
+    console.log('更新 Vuex gameList:', data) // 确保数据存入 Vuex
     state.gameList = Array.isArray(data) ? data : []
     state.total = total
   },
@@ -46,18 +45,17 @@ const mutations = {
 
 const actions = {
 // ページネーション対応 ゲームリスト取得
-  async fetchGameList ({ commit }) {
+  async fetchGameList ({ commit, state }) {
     commit('setLoading', true)
     commit('setError', null)
     try {
-      const result = await reqGameListPage()
-      console.log('API response', result)
-
-      if (result.code === 200) {
-        commit('setGameList', { data: result.data || [], total: result.total || 0 })
+      const page = state.currentPage
+      const size = state.pageSize
+      const result = await reqGameListPage({ page, size })
+      if (result.code === 200 && Array.isArray(result.data)) {
+        commit('setGameList', { data: result.data, total: result.total || 0 })
       } else {
         commit('setGameList', { data: [], total: 0 })
-        commit('setError', result.message || 'データ取得失敗')
       }
     } catch (error) {
       commit('setGameList', { data: [], total: 0 })
@@ -65,26 +63,6 @@ const actions = {
     } finally {
       commit('setLoading', false)
     }
-    // try {
-    //   const offset = (state.currentPage > 1 ? (state.currentPage - 1) * state.pageSize : 0)
-    //   console.log('API発送請求', `/gameList?size=${state.pageSize}&offset=${offset}`)
-
-    //   const result = await reqGameListPage(state.pageSize, offset) // offset を API に送信
-    //   console.log('API返信データ', result)
-
-    //   if (result.code === 200) {
-    //     commit('setGameList', { data: result.data, total: result.total })
-    //   } else {
-    //     commit('setGameList', { data: [], total: 0 }) // エラー時にリストをクリア
-    //     commit('setError', result.message || 'ページ割失敗')
-    //   }
-    // } catch (error) {
-    //   commit('setGameList', { data: [], total: 0 }) // エラー時にリストをクリア
-    //   commit('setError', error.message || 'サーバーエラー')
-    //   console.error('API請求失敗', error)
-    // } finally {
-    //   commit('setLoading', false)
-    // }
   },
   // ゲームリスト取得
   async fetchAllGames ({ commit }) {

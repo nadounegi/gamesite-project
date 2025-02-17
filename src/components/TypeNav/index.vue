@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-unused-vars -->
 <template>
   <div class="type-nav">
     <div class="container">
@@ -94,13 +95,13 @@ export default {
     }, 20),
     leaveHandler () {
       this.currentIndex = -1
-      if (this.$route.path != '/home') {
+      if (this.$route.path !== '/home') {
         // ホームページ以外のページに行くと、カテゴリーが消える
         this.show = false
       }
     },
     changeShow () {
-      if (this.$route.path != '/home') {
+      if (this.$route.path !== '/home') {
         this.show = true
       }
     },
@@ -128,7 +129,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$route.path != '/home') {
+    if (this.$route.path !== '/home') {
       this.show = false
     }
   },

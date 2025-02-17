@@ -1,4 +1,4 @@
-import { reqCategoryList, reqGetBannerList } from '@/api/index.js'
+import { reqCategoryList, reqGetBannerList } from '@/api'
 
 const state = {
   categoryList: [],
@@ -11,7 +11,6 @@ const mutations = {
   getCategoryList (state, categoryList) {
     state.categoryList = categoryList
   },
-
   setBannerList (state, bannerList = []) {
     state.bannerList = bannerList
   },
@@ -36,7 +35,6 @@ const actions = {
       commit('setError', error.message)
     }
   },
-
   async fetchBannerList ({ commit, state }) {
     if (state.bannerList.length) return
     try {
@@ -53,10 +51,6 @@ const actions = {
 const getters = {
   categoryList (state) {
     return state.categoryList
-  },
-
-  bannerList (state) {
-    return state.bannerList
   },
   isLoading (state) {
     return state.loading
