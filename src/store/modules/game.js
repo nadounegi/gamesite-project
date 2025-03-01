@@ -1,4 +1,5 @@
-import { reqGameListPage, reqGameList, reqGenreList } from '@/api'
+import Vue from 'vue'
+import { reqGameListPage, reqAllGamesList, reqGenreList } from '@/api'
 
 const state = {
   gameList: [],
@@ -13,18 +14,19 @@ const state = {
 
 const mutations = {
   setGameList (state, { data = [], total = 0 }) {
-    console.log('更新gameList:', data)
-    console.log('更新total:', total)
-    state.gameList = Array.isArray(data) ? data : []
-    state.total = total
+    console.log('更新 gameList:', data)
+    Vue.set(state, 'gameList', Array.isArray(data) ? data : [])
+    Vue.set(state, 'total', total)
   },
-  setAllGamesList (state, gameList) {
-    state.allGamesList = gameList.map(game => ({
-      ...game,
-      genreName: game.genreName || '不明', // genreName 直接是字符串
-      platformType: game.platformType || '不明', // platformType 直接是字符串
-      brandName: game.brandName || '不明' // brandName 直接是字符串
-    }))
+  setAllGamesList (state, allGamesList) {
+    console.log('allGamesList:', allGamesList)
+    state.allGamesList = Array.isArray(allGamesList) ? allGamesList : []
+    // state.allGamesList = gameList.map(game => ({
+    //   ...game,
+    //   genreName: game.genreName || '不明', // genreName 直接是字符串
+    //   platformType: game.platformType || '不明', // platformType 直接是字符串
+    //   brandName: game.brandName || '不明' // brandName 直接是字符串
+    // }))
   },
   setGenreList (state, genreList) {
     state.genreList = genreList || []
@@ -51,51 +53,55 @@ const actions = {
     commit('setError', null)
     try {
       const result = await reqGameListPage()
-      console.log('API response', result)
+      console.log('API 获取游戏列表数据:', result)
 
-      if (result.code === 200) {
-        commit('setGameList', { data: result.data || [], total: result.total || 0 })
+      if (result.code === 200 && Array.isArray(result.data)) {
+        const formattedData = result.data.map(game => ({
+          id: game.id || 0,
+          gameName: game.gameName || '不明',
+          url: game.url || '',
+          platformType: game.platformType || '不明',
+          genreName: game.genreName || '不明',
+          description: game.description || '',
+          price: game.price || 0,
+          stock: game.stock || 0
+        }))
+        commit('setGameList', { data: formattedData, total: result.total || 0 })
       } else {
         commit('setGameList', { data: [], total: 0 })
         commit('setError', result.message || 'データ取得失敗')
       }
     } catch (error) {
+      console.error('API請求失敗:', error)
       commit('setGameList', { data: [], total: 0 })
       commit('setError', error.message || 'サーバーエラー')
     } finally {
       commit('setLoading', false)
     }
-    // try {
-    //   const offset = (state.currentPage > 1 ? (state.currentPage - 1) * state.pageSize : 0)
-    //   console.log('API発送請求', `/gameList?size=${state.pageSize}&offset=${offset}`)
-
-    //   const result = await reqGameListPage(state.pageSize, offset) // offset を API に送信
-    //   console.log('API返信データ', result)
-
-    //   if (result.code === 200) {
-    //     commit('setGameList', { data: result.data, total: result.total })
-    //   } else {
-    //     commit('setGameList', { data: [], total: 0 }) // エラー時にリストをクリア
-    //     commit('setError', result.message || 'ページ割失敗')
-    //   }
-    // } catch (error) {
-    //   commit('setGameList', { data: [], total: 0 }) // エラー時にリストをクリア
-    //   commit('setError', error.message || 'サーバーエラー')
-    //   console.error('API請求失敗', error)
-    // } finally {
-    //   commit('setLoading', false)
-    // }
   },
   // ゲームリスト取得
   async fetchAllGames ({ commit }) {
     commit('setLoading', true)
     commit('setError', null)
     try {
-      const result = await reqGameList()
+      const result = await reqAllGamesList()
       console.log('API 响应:', result)
       if (result.code === 200) {
         console.log('処理前的数据：', result.data)
-        commit('setAllGamesList', result.data || [])
+        // 直接使用 result.data，因为游戏列表在 data 数组中
+        const games = result.data || []
+        const mappedGames = games.map(game => ({
+          id: game.gameId,
+          gameName: game.gameName,
+          url: game.url,
+          platformType: game.platformType,
+          brandName: game.brandName,
+          genreName: game.brandName,
+          description: game.description,
+          price: game.price,
+          stock: game.stock
+        }))
+        commit('setAllGamesList', mappedGames)
       } else {
         commit('setAllGamesList', []) // エラー時にリストをクリア
         commit('setError', result.message || 'ゲームリスト取得失敗')

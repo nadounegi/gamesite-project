@@ -4,21 +4,21 @@ import router from './router'
 import store from './store'
 import Vuex from 'vuex'
 import * as api from '@/api'
-// 注册全局组件
+// グローバルコンポーネントの登録
 import TypeNav from '@/components/TypeNav'
-
 import ListContainer from '@/views/Home/ListContainer'
-
 import GameList from '@/views/Home/GameList/index.vue'
 // swiper 輪播図 をグローバルに登録する
-import 'swiper/css/swiper.css'
-
+import 'swiper/css'
+import 'swiper/css/autoplay'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
 // Element UI
 import ElementUI from 'element-ui'
 
 import http from '@/api'
-
 import process from 'process'
+
 Vue.use(ElementUI, { size: 'mini' })
 import('element-ui/lib/theme-chalk/index.css')
 Vue.use(Vuex)

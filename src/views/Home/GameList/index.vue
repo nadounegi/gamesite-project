@@ -35,7 +35,7 @@ import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'GameList',
-  created () {
+  created () { // ✅ 在组件创建时调用 fetchAllGames 方法
     this.fetchAllGames()
   },
   computed: {
@@ -45,20 +45,6 @@ export default {
   methods: {
     ...mapActions('game', ['fetchAllGames'])
   }
-  // computed: {
-  //   gamesList () {
-  //     return this.$store.getters['game/allGamesList']
-  //   },
-  //   loading () {
-  //     return this.$store.getters['game/isLoading']
-  //   },
-  //   error () {
-  //     return this.$store.getters['game/error']
-  //   }
-  // },
-  // created () {
-  //   this.$store.dispatch('game/fetchAllGames')
-  // }
 }
 </script>
 

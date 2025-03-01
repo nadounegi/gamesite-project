@@ -29,10 +29,9 @@ export async function reqAddGenre (genreName) {
   return requests.post('/genres', null, { params: { genreName } })
 }
 
-export async function reqGameList () {
-  return requests.get('/gameList')
+export async function reqAllGamesList () {
+  return requests.get('/gameList/all')
 }
-
 export async function reqAddGame (gameData) {
   return requests.post('/games', gameData, {
     headers: { 'Content-Type': 'application/json' }

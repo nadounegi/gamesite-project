@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="contents">
    <h1>ホームページ</h1>
@@ -18,6 +19,4 @@ export default {
   height: 100%;
   background-color: #1864d6;
 }
-</style>
-
 </style>

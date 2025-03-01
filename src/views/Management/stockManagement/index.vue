@@ -84,52 +84,62 @@
       </div>
 </el-dialog>
     <div class="table-contents">
-      <el-table
-      v-if="safeGameList && safeGameList.length > 0"
-      v-loading="loading"
-      :data="safeGameList"
-      border
-      :span-method="mergeCells"
-      style="width: 100%">
-        <el-table-column prop="id" label="ゲーム番号" width="90">
-          <template slot-scope="scope">
-        <span>{{ scope.row.id + 1 }}</span>
-        </template>
-        </el-table-column>
-        <el-table-column prop="url" label="写真" width="160">
-          <template slot-scope="scope">
-            <img :src = 'scope.row.url' width="160px" height="180px">
-          </template>
-        </el-table-column>
-        <el-table-column prop="gameName" label="ゲーム名" width="120">
-        </el-table-column>
-        <el-table-column prop="platformType" label="プラットフォーム" width="80">
-        <template slot-scope="scope">
-        <span>{{ scope.row.platformType }}</span>
-        </template>
-        </el-table-column>
-        <el-table-column prop="genreName" label="ゲーム類型" width="120">
-        <template slot-scope="scope">
-        <span>{{ scope.row.genreName }}</span>
-        </template>
-        </el-table-column>
-        <el-table-column prop="stock" label="在庫数" width="80">
-        </el-table-column>
-        <el-table-column prop="price" label="価格" width="80"> </el-table-column>
-          <!-- 游戏介绍の二列を結合 -->
-        <el-table-column prop="description" label="ゲーム紹介" width="200">
-          <span>{{ scope.row.description }}</span>
-        </el-table-column>
-        <!-- 操作列 -->
-        <el-table-column fixed="right" label="操作" width="100">
-          <template slot-scope="scope">
-            <el-button @click="handleClick(scope.row)" type="text" size="small"
-              >查看</el-button
-            >
-            <el-button type="text" size="small">编辑</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <el-table v-if="gameList.length > 0" :data="gameList" border v-loading="loading">
+  <el-table-column prop="id" label="ゲーム番号" width="90">
+    <template slot-scope="scope">
+      <span>{{ scope.$index + 1 }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="url" label="写真" width="160">
+    <template slot-scope="scope">
+      <img :src="scope.row.url" width="160px" height="180px">
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="gameName" label="ゲーム名" width="120">
+    <template slot-scope="scope">
+      <span>{{ scope.row.gameName }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="platformType" label="プラットフォーム" width="80">
+    <template slot-scope="scope">
+      <span>{{ scope.row.platformType }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="genreName" label="ゲーム類型" width="120">
+    <template slot-scope="scope">
+      <span>{{ scope.row.genreName }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="stock" label="在庫数" width="80">
+    <template slot-scope="scope">
+      <span>{{ scope.row.stock }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="price" label="価格" width="80">
+    <template slot-scope="scope">
+      <span>{{ scope.row.price }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column prop="description" label="ゲーム紹介" width="200">
+    <template slot-scope="scope">
+      <span>{{ scope.row.description }}</span>
+    </template>
+  </el-table-column>
+
+  <el-table-column fixed="right" label="操作" width="100">
+    <template slot-scope="scope">
+      <el-button @click="handleClick(scope.row)" type="text" size="small">查看</el-button>
+      <el-button type="text" size="small">編集</el-button>
+    </template>
+  </el-table-column>
+</el-table>
       <el-pagination
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
@@ -144,24 +154,12 @@
 </template>
 
 <script>
-import { reqAddGame, reqUploadImage } from '@/api'
-import { mapActions, mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
+
 export default {
   name: 'stockManagement',
-  computed: {
-    ...mapState('game', ['gameList']),
-    safeGameList () {
-      return Array.isArray(this.gameList) ? this.gameList : []
-    }
-  },
-  watch: {
-    gameList (newList) {
-      console.log('gameList 更新:', newList)
-    }
-  },
   data () {
     return {
-      gameList: [],
       dialogVisible: false, // 控制对话框显示
       sizeForm: {
         name: '',
@@ -180,116 +178,29 @@ export default {
 
     }
   },
+  computed: {
+    ...mapState('game', ['gameList', 'loading', 'total', 'currentPage', 'pageSize']) // 映射 Vuex 数据
+
+  },
   methods: {
-    // **打开对话框**
-    openDialog () {
-      this.dialogVisible = true
-    },
-    async addGame () {
-      if (!this.dialogForm.gameName || !this.dialogForm.platformType || !this.dialogForm.genreName || !this.dialogForm.price || this.dialogForm.stock || this.dialogForm.description || this.dialogForm.url) {
-        alert('すべての項目を入力してください')
-        return
-      }
-
-      let imageUrl = ''
-      if (this.dialogForm.file) {
-        const imageForm = new FormData()
-        imageForm.append('file', this.dialogForm.file)
-
-        try {
-          const uploadResponse = await reqUploadImage(imageForm) // 写真アップロード
-          if (uploadResponse.code === 1) {
-            // eslint-disable-next-line no-const-assign
-            imageUrl = uploadResponse.imageUrl // backend return 写真URL
-          } else {
-            this.$message.error('画像のアップロードに失敗しました')
-            return
-          }
-        } catch (error) {
-          this.$message.error('画像のアップロード失敗')
-          return
-        }
-      }
-
-      const formData = {
-        gameName: this.dialogForm.gameName,
-        description: this.dialogForm.description,
-        price: this.dialogForm.price,
-        stock: this.dialogForm.stock,
-        platformId: this.dialogForm.platformType,
-        genreId: this.dialogForm.genreName,
-        brandId: 1,
-        url: imageUrl // 存储上传后的图片 URL
-      }
-
-      // APIへリクエスト送信
-      reqAddGame(formData)
-        .then(response => {
-          if (response.code === 200) {
-            this.$message.success(response.message)
-          }
-        })
-      // 清空表单数据并关闭对话框
-      this.dialogForm = { gameName: '', platformType: '', genreName: '' }
-      this.dialogVisible = false
-
-      this.$message.success('ゲームが追加されました！')
-    },
-    stockAdd () {
-      console.log('在庫管理')
-    },
-    handleClick (row) {
-      console.log(row)
-    },
-    handleRemove (file, fileList) {
-      console.log(file, fileList)
-    },
-    handlePreview (file) {
-      console.log(file)
-    },
+    ...mapActions('game', ['fetchGameList']),
     handleSizeChange (size) {
       this.$store.commit('game/setPageSize', size)
       this.fetchGameList()
-    },
-    handleCurrentChange (page) {
-      if (page < 1) page = 1
-      this.$store.commit('game/setCurrentPage', page)
-      this.fetchGameList()
-    },
-    async handleFileUpload (event) {
-      const file = event.target.files[0]
-      if (!file) return
-
-      this.dialogForm.file = file
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        this.imagePreview = reader.result
-      }
-    },
-    ...mapActions('game', ['fetchGameList']),
-    mergeCells ({ row, column, rowIndex, columnIndex }) {
-      console.log('mergeCells params:', { row, column, rowIndex, columnIndex })
-
-      // 如果 row 或 column 未定义，返回 [1, 1]
-      if (!row || !column) {
-        console.warn('Row or column is undefined in mergeCells:', { row, column })
-        return [1, 1]
-      }
-
-      if (columnIndex === 6) {
-        return [1, 2] // 合并第6列
-      } else if (columnIndex === 7) {
-        return [0, 0] // 隐藏第7列
-      }
-      return [1, 1]
     }
-
   },
   mounted () {
+    console.log('组件加载完成，开始获取游戏列表')
     this.fetchGameList()
+  },
+  watch: {
+    gameList (gameList) {
+      console.log('Vuex gameList 更新:', gameList)
+    }
   }
+
 }
+
 </script>
 
 <style lang="less" scoped>
