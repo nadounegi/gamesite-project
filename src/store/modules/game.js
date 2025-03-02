@@ -21,12 +21,6 @@ const mutations = {
   setAllGamesList (state, allGamesList) {
     console.log('allGamesList:', allGamesList)
     state.allGamesList = Array.isArray(allGamesList) ? allGamesList : []
-    // state.allGamesList = gameList.map(game => ({
-    //   ...game,
-    //   genreName: game.genreName || '不明', // genreName 直接是字符串
-    //   platformType: game.platformType || '不明', // platformType 直接是字符串
-    //   brandName: game.brandName || '不明' // brandName 直接是字符串
-    // }))
   },
   setGenreList (state, genreList) {
     state.genreList = genreList || []

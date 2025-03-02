@@ -84,8 +84,8 @@
       </div>
 </el-dialog>
     <div class="table-contents">
-      <el-table v-if="gameList.length > 0"
-        :data="gameList" border v-loading="loading"
+      <el-table v-if="safeGameList.length > 0"
+        :data="safeGameList" border v-loading="loading"
         :span-method="mergeCells"
         style="width: 100%;">
   <el-table-column prop="id" label="ゲーム番号" width="90">
@@ -184,8 +184,11 @@ export default {
     }
   },
   computed: {
-    ...mapState('game', ['gameList', 'loading', 'total', 'currentPage', 'pageSize']) // 映射 Vuex 数据
+    ...mapState('game', ['gameList', 'loading', 'total', 'currentPage', 'pageSize']),
 
+    safeGameList () {
+      return Array.isArray(this.gameList) ? this.gameList : [] // 避免 undefined
+    }
   },
   methods: {
     ...mapActions('game', ['fetchGameList']),
