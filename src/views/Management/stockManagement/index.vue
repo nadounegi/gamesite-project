@@ -38,7 +38,7 @@
         </el-form-item>
         <!-- ボタン部分 -->
         <div class="button-container">
-          <el-button type="primary" round @click="openDialog"
+          <el-button type="primary" round @click="dialogFormVisible = true"
             >ゲーム追加</el-button>
           <el-button type="primary" round @click="stockAdd">
             在庫管理
@@ -46,7 +46,7 @@
         </div>
       </el-form>
     </div>
-<el-dialog title="ゲーム追加" :visible.sync="dialogVisible" width="40%" >
+<el-dialog title="ゲーム追加" :visible.sync="dialogFormVisible" width="40%" >
   <el-form ref="dialogForm" :model="dialogForm" label-width="100px" >
     <el-form-item label="ゲーム名">
       <el-input v-model="dialogForm.gameName"></el-input>
@@ -84,7 +84,10 @@
       </div>
 </el-dialog>
     <div class="table-contents">
-      <el-table v-if="gameList.length > 0" :data="gameList" border v-loading="loading">
+      <el-table v-if="gameList.length > 0"
+        :data="gameList" border v-loading="loading"
+        :span-method="mergeCells"
+        style="width: 100%;">
   <el-table-column prop="id" label="ゲーム番号" width="90">
     <template slot-scope="scope">
       <span>{{ scope.$index + 1 }}</span>
@@ -93,7 +96,7 @@
 
   <el-table-column prop="url" label="写真" width="160">
     <template slot-scope="scope">
-      <img :src="scope.row.url" width="160px" height="180px">
+      <img :src="scope.row.url"  class="game-image">
     </template>
   </el-table-column>
 
@@ -127,18 +130,20 @@
     </template>
   </el-table-column>
 
-  <el-table-column prop="description" label="ゲーム紹介" width="200">
+  <el-table-column prop="description" label="ゲーム紹介" width="250">
     <template slot-scope="scope">
-      <span>{{ scope.row.description }}</span>
+      <span class="description-text">{{ scope.row.description }}</span>
     </template>
   </el-table-column>
-
-  <el-table-column fixed="right" label="操作" width="100">
-    <template slot-scope="scope">
+  <el-table-column label="操作">
+  <template slot-scope="scope">
+    <div class="operation-buttons">
       <el-button @click="handleClick(scope.row)" type="text" size="small">查看</el-button>
       <el-button type="text" size="small">編集</el-button>
-    </template>
-  </el-table-column>
+    </div>
+  </template>
+</el-table-column>
+
 </el-table>
       <el-pagination
       @size-change="handleSizeChange"
@@ -160,7 +165,7 @@ export default {
   name: 'stockManagement',
   data () {
     return {
-      dialogVisible: false, // 控制对话框显示
+      dialogFormVisible: false, // 控制对话框显示
       sizeForm: {
         name: '',
         platformType: '',
@@ -187,6 +192,15 @@ export default {
     handleSizeChange (size) {
       this.$store.commit('game/setPageSize', size)
       this.fetchGameList()
+    },
+    addGame () {
+      this.$store.dispatch('game/addGame', this.dialogForm)
+      this.dialogVisible = false
+    },
+    mergeCells ({ row, column, rowIndex, columnIndex }) {
+      if (columnIndex === 9) {
+        return [1, 2]
+      }
     }
   },
   mounted () {
@@ -239,7 +253,54 @@ export default {
   justify-content: center;
   margin-bottom: 14px;
 }
+.el-table {
+  width: 100%;
+  min-width: 1200px; /* 适当调整 */
+}
+.el-table .el-table-row {
+  height: 120px; /* 让行高与图片大小一致 */
+}
+.form-bar,
+.table-contents {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0 auto; /* 确保居中 */
+}
+
+.el-table__body-wrapper {
+  width: auto !important;
+  overflow-x: hidden; /* 防止额外滚动条 */
+}
+
+.el-table-column
+.el-table__cell {
+  text-align: center;
+  padding: 0;
+  line-height: 100px; /* 行高等于最小高度 */
+  white-space: normal; /* 换行 */
+  word-wrap: break-word; /* 换行 */
+  word-break: break-word; /* 换行 */
+  max-width: 250px; /* 最大宽度 */
+}
+
 .el-table-column{
   text-align: center;
+}
+
+.game-image{
+  width: 100px;  /* 统一宽度 */
+  height: 150px; /* 统一高度，避免图片过高 */
+  object-fit: contain; /* 图片不变形 */
+  display: block;
+  margin: 0 auto; /* 图片居中 */
+}
+
+.description-text {
+  display: block;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 250px;
 }
 </style>
