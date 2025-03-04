@@ -1,10 +1,12 @@
 import Vue from 'vue'
-import { reqGameListPage, reqAllGamesList, reqGenreList } from '@/api'
+import { reqGameListPage, reqAllGamesList, reqGenreList, reqPlatformList, reqBrandList } from '@/api'
 
 const state = {
   gameList: [],
   genreList: [],
+  platformList: [],
   allGamesList: [],
+  brandList: [],
   total: 0, // ゲームの総数
   currentPage: 1, // 現在のページ
   pageSize: 10, // 1ページあたりのゲーム数
@@ -13,6 +15,15 @@ const state = {
 }
 
 const mutations = {
+  setBrandList (state, brandList = []) {
+    state.brandList = brandList
+  },
+  setPlatformList (state, platformList = []) {
+    state.platformList = platformList
+  },
+  setGenreList (state, genreList = []) {
+    state.genreList = genreList
+  },
   setGameList (state, { data = [], total = 0 }) {
     console.log('更新 gameList:', data)
     Vue.set(state, 'gameList', Array.isArray(data) ? data : [])
@@ -21,9 +32,6 @@ const mutations = {
   setAllGamesList (state, allGamesList) {
     console.log('allGamesList:', allGamesList)
     state.allGamesList = Array.isArray(allGamesList) ? allGamesList : []
-  },
-  setGenreList (state, genreList) {
-    state.genreList = genreList || []
   },
   setCurrentPage (state, page) {
     state.currentPage = page
@@ -41,7 +49,43 @@ const mutations = {
 }
 
 const actions = {
-// ページネーション対応 ゲームリスト取得
+  async fetchBrandList ({ commit }) {
+    try {
+      const result = await reqBrandList()
+      if (result.code === 200) {
+        commit('setBrandList', result.data)
+      }
+      return result
+    } catch (error) {
+      console.error('ブランドリストの取得に失敗しました:', error)
+      return Promise.reject(error)
+    }
+  },
+  async fetchGenreList ({ commit }) {
+    try {
+      const result = await reqGenreList()
+      if (result.code === 200) {
+        commit('setGenreList', result.data)
+      }
+      return result
+    } catch (error) {
+      console.error('ジャンルリストの取得に失敗しました:', error)
+      return Promise.reject(error)
+    }
+  },
+  async fetchPlatform ({ commit }) {
+    try {
+      const result = await reqPlatformList()
+      if (result.code === 200) {
+        commit('setPlatformList', result.data)
+        return result
+      }
+    } catch (error) {
+      console.error('プラットフォーム 请求失败:', error)
+      return Promise.reject(error)
+    }
+  },
+  // ページネーション対応 ゲームリスト取得
   async fetchGameList ({ commit }) {
     commit('setLoading', true)
     commit('setError', null)
@@ -102,24 +146,6 @@ const actions = {
       }
     } catch (error) {
       commit('setAllGamesList', []) // エラー時にリストをクリア
-      commit('setError', error.message || 'サーバーエラー')
-    } finally {
-      commit('setLoading', false)
-    }
-  },
-  async fetchGenreList ({ commit }) {
-    commit('setLoading', true)
-    commit('setError', null)
-    try {
-      const result = await reqGenreList()
-      if (result.code === 200) {
-        commit('setGenreList', result.data || [])
-      } else {
-        commit('setGenreList', []) // エラー時にリストをクリア
-        commit('setError', result.message || 'ゲーム類型取得失敗')
-      }
-    } catch (error) {
-      commit('setGenreList', []) // エラー時にリストをクリア
       commit('setError', error.message || 'サーバーエラー')
     } finally {
       commit('setLoading', false)

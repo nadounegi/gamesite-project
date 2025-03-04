@@ -11,9 +11,31 @@
           ></el-input>
         </el-form-item>
 
+        <el-form-item label="開発元" style="width: 127px">
+          <el-select
+            v-model="sizeForm.platformType"
+            v-if="brandList.length > 0"
+            placeholder="開発元を選択してください"
+            style="
+              width: 100%;
+              max-width: 500px;
+              min-width: 380px;
+              height: 40px;
+            "
+          >
+            <el-option
+            v-for="brand in brandList"
+            :key="brand.brandId"
+            :label="brand.brandName"
+            :value="brand.brandId"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <!-- プラットフォームを選択してください -->
         <el-form-item label="プラットフォーム" style="width: 127px">
           <el-select
             v-model="sizeForm.platformType"
+            v-if="platformList.length > 0"
             placeholder="プラットフォームを選択してください"
             style="
               width: 100%;
@@ -22,23 +44,33 @@
               height: 40px;
             "
           >
-            <el-option label="PS4" value="ps4"></el-option>
-            <el-option label="PS5" value="ps5"></el-option>
+            <el-option
+            v-for="platform in platformList"
+            :key="platform.platformId"
+            :label="platform.platformType"
+            :value="platform.platformId"
+            ></el-option>
           </el-select>
         </el-form-item>
-
+        <!-- ジャンルを選択してください -->
         <el-form-item label="ジャンル">
           <el-select
             v-model="sizeForm.genreName"
+            v-if="genreList.length > 0"
             placeholder="ゲーム類型を選択してください"
             style="width: 30%; height: 40px"
           >
-            <el-option label="アクション" value="action"></el-option>
+            <el-option
+            v-for="genre in genreList"
+            :key="genre.genreId"
+            :label="genre.genreName"
+            :value="genre.genreId"
+            ></el-option>
           </el-select>
         </el-form-item>
         <!-- ボタン部分 -->
         <div class="button-container">
-          <el-button type="primary" round @click="dialogFormVisible = true"
+          <el-button type="primary" round @click="addGame('add')"
             >ゲーム追加</el-button>
           <el-button type="primary" round @click="stockAdd">
             在庫管理
@@ -46,43 +78,6 @@
         </div>
       </el-form>
     </div>
-<el-dialog title="ゲーム追加" :visible.sync="dialogFormVisible" width="40%" >
-  <el-form ref="dialogForm" :model="dialogForm" label-width="100px" >
-    <el-form-item label="ゲーム名">
-      <el-input v-model="dialogForm.gameName"></el-input>
-    </el-form-item>
-    <el-form-item label="プラットフォーム" label-width="150px">
-      <el-select v-model="dialogForm.platform">
-        <el-option label="PS4" value="ps4"></el-option>
-        <el-option label="PS5" value="ps5"></el-option>
-      </el-select>
-    </el-form-item>
-    <el-form-item label="ジャンル">
-      <el-select v-model="dialogForm.genre">
-        <el-option label="アクション" value="action"></el-option>
-        <el-option label="RPG" value="rpg"></el-option>
-      </el-select>
-    </el-form-item>
-    <el-form-item label="価格">
-      <el-input v-model="dialogForm.price"></el-input>
-    </el-form-item>
-    <el-form-item label="在庫数">
-      <el-input v-model="dialogForm.stock"></el-input>
-    </el-form-item>
-    <el-form-item label="ゲーム紹介">
-      <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 10}" v-model="dialogForm.description"></el-input>
-    </el-form-item>
-       <!-- 画像アップロード -->
-       <el-form-item label="ゲーム画像">
-          <input type="file" @change="handleFileUpload" accept="image/*">
-          <img v-if="imagePreview" :src="imagePreview" alt="画像プレビュー" style="max-width: 100px; margin-top: 10px;">
-        </el-form-item>
-  </el-form>
-  <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" @click="addGame">追加</el-button>
-      </div>
-</el-dialog>
     <div class="table-contents">
       <el-table v-if="safeGameList.length > 0"
         :data="safeGameList" border v-loading="loading"
@@ -165,42 +160,46 @@ export default {
   name: 'stockManagement',
   data () {
     return {
-      dialogFormVisible: false, // 控制对话框显示
       sizeForm: {
         name: '',
         platformType: '',
         genreName: ''
-      },
-      dialogForm: {
-        gameName: '',
-        platformType: '',
-        genreName: '',
-        price: '',
-        stock: '',
-        description: '',
-        url: null
       }
+    }
+  },
+  async created () {
+    try {
+      await this.fetchPlatform()
+      console.log('platformList:', this.platformList)
 
+      await this.fetchGenreList()
+      console.log('genreList:', this.genreList)
+
+      await this.fetchBrandList()
+      console.log('brandList:', this.brandList)
+    } catch (error) {
+      console.error('ゲーム追加ページのデータ取得に失敗しました', error)
     }
   },
   computed: {
-    ...mapState('game', ['gameList', 'loading', 'total', 'currentPage', 'pageSize']),
+    ...mapState('game', ['platformList', 'genreList', 'brandList', 'gameList', 'loading', 'total', 'currentPage', 'pageSize']),
 
     safeGameList () {
       return Array.isArray(this.gameList) ? this.gameList : [] // 避免 undefined
     }
   },
   methods: {
-    ...mapActions('game', ['fetchGameList']),
+    ...mapActions('game', ['fetchGameList', 'fetchPlatform', 'fetchGenreList', 'fetchBrandList']),
     handleSizeChange (size) {
       this.$store.commit('game/setPageSize', size)
       this.fetchGameList()
     },
-    addGame () {
-      this.$store.dispatch('game/addGame', this.dialogForm)
-      this.dialogVisible = false
+    addGame (mt) {
+      if (mt === 'add') {
+        this.$router.push({ path: '/stock/add', query: { id: mt } })
+      }
     },
-    mergeCells ({ row, column, rowIndex, columnIndex }) {
+    mergeCells ({ columnIndex }) {
       if (columnIndex === 9) {
         return [1, 2]
       }

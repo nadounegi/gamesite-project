@@ -9,6 +9,7 @@ import Register from '@/views/Register'
 import Management from '@/views/Management'
 import HomePage from '@/views/Management/homePage'
 import stockManagement from '@/views/Management/stockManagement'
+import addGame from '@/views/Management/stockManagement/addGame.vue'
 import Admin from '@/views/Management/Admin'
 import PlatformManagement from '@/views/Management/PlatformManagement'
 import genreManagement from '@/views/Management/genreManagement'
@@ -77,6 +78,10 @@ export default new Router({
         {
           path: 'stock',
           component: stockManagement // 在庫管理
+        },
+        {
+          path: '/stock/add',
+          component: addGame // ゲーム追加
         },
         {
           path: 'platform',
